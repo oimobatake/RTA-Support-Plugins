@@ -65,6 +65,11 @@ obs_source_t *get_or_create_text_source(const char* source_name)
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings, "text", ""); // 初期テキストを空に設定
 		source = obs_source_create("text_gdiplus_v3", source_name, settings, nullptr);
+		if (!source) {
+			// v3 が失敗した（古いOBS環境の）場合、v2 で再試行
+			blog(LOG_INFO, "[RTA Plugin] text_gdiplus_v3 not supported. Falling back to v2...");
+			source = obs_source_create("text_gdiplus_v2", source_name, settings, nullptr);
+		}
 		obs_data_release(settings);
 	}
 
