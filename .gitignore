@@ -1,0 +1,79 @@
+# ===================================================================
+# General purpose .gitignore for C++/CMake/Qt OBS Plugin Projects
+# ===================================================================
+
+# OS generated files
+# -------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build output directories
+# -------------------------------------------
+/build/
+/build_x64/
+/[Bb]uild/
+/install/
+/out/
+/.deps/
+
+# Visual Studio / MSVC generated files
+# -------------------------------------------
+.vs/
+*.sln
+*.suo
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.aps
+*.ncb
+*.opt
+*.pdb
+*.ilk
+ipch/
+[Dd]ebug/
+[Rr]elease/
+x64/
+Win32/
+packages/
+
+# Qt generated files
+# -------------------------------------------
+*.pro.user
+*.qbs.user
+*.moc
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+
+# CMake specific files
+# -------------------------------------------
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+CMakeUserPresets.json
+/cmake/.CMakeBuildNumber # From your original file
+
+# Compiled artifacts and libraries
+# -------------------------------------------
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+*.dylib
+*.o
+*.obj
+
+# Other project-specific ignores
+# -------------------------------------------
+*.lock.json # From your original file
+
