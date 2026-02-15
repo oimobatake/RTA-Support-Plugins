@@ -1,4 +1,4 @@
-# **RTA Support Plugin for OBS Studio**
+# **RTA Support Plugin**
 
 OBS Studio上でRTAイベント等の進行を支援するためのプラグインです。
 
