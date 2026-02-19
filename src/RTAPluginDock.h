@@ -29,6 +29,8 @@ public:
 
 	// 初期化とシグナル接続
 	void SetupPositionSignals();
+	void SetupStyleSignals();
+	void UpdateObsSourceStyle();
 
 private slots:
 
@@ -64,6 +66,11 @@ private:
 	int currentOutlineColor = 0x000000;
 	int timerColor = 0xFFFFFF;
 	int timerStopColor = 0xFFFF00;
+
+	std::map<QString, QFont> fontList;
+	std::map<QString, QString> colorList;
+	std::map<QString, QString> alignList; // 追加：アライメント情報
+	std::map<QString, QPointF> posList;
 
 	QJsonObject scheduleData;
 	std::vector<GameData> currentGameData;

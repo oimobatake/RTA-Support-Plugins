@@ -473,545 +473,11 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_4">
-      <attribute name="title">
-       <string>layout</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_7">
-       <item>
-        <layout class="QGridLayout" name="gridLayout">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_9">
-           <property name="font">
-            <font/>
-           </property>
-           <property name="text">
-            <string>テキスト表示座標設定</string>
-           </property>
-           <property name="scaledContents">
-            <bool>false</bool>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLabel" name="label_11">
-           <property name="font">
-            <font/>
-           </property>
-           <property name="text">
-            <string>X</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="label_12">
-           <property name="font">
-            <font/>
-           </property>
-           <property name="text">
-            <string>Y</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_10">
-           <property name="text">
-            <string>ゲームタイトル</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_GameTitle">
-           <property name="maximum">
-            <double>99.989999999999995</double>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_GameTitle"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_4">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_13">
-           <property name="text">
-            <string>カテゴリー</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_Category"/>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_Category"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_5">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_14">
-           <property name="text">
-            <string>機種</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_Hardware"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_Hardware"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_6">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_15">
-           <property name="text">
-            <string>予定時間</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_EstimateTime"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_EstimateTime"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_8">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_17">
-           <property name="text">
-            <string>タイマー</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_CountUpTimer"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_CountUpTimer"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_9">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_18">
-           <property name="text">
-            <string>カウントダウンタイマー</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_CountDownTimer"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_CountDownTimer"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_14">
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_RunnerName_1"/>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_23">
-           <property name="text">
-            <string>走者1</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_RunnerName_1"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_15">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_24">
-           <property name="text">
-            <string>走者2</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_RunnerName_2"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_RunnerName_2"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_16">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_25">
-           <property name="text">
-            <string>走者3</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_RunnerName_3"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_RunnerName_3"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_17">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_26">
-           <property name="text">
-            <string>走者4</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_RunnerName_4"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_RunnerName_4"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_10">
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_RunnerTimer_1"/>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_RunnerTimer_1"/>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_19">
-           <property name="text">
-            <string>走者1 タイマー</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_11">
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_RunnerTimer_2"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_RunnerTimer_2"/>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_20">
-           <property name="text">
-            <string>走者2 タイマー</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_12">
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_RunnerTimer_3"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_RunnerTimer_3"/>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_21">
-           <property name="text">
-            <string>走者3 タイマー</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_13">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_22">
-           <property name="text">
-            <string>走者4 タイマー</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_RunnerTimer_4"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_RunnerTimer_4"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_18">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_27">
-           <property name="text">
-            <string>解説者</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="posX_Commentary"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="posY_Commentary"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>111</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_19">
-         <property name="leftMargin">
-          <number>150</number>
-         </property>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="LoadPosSettingBtn">
-           <property name="text">
-            <string>LoadLayout</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QPushButton" name="SavePosSettingBtn">
-           <property name="text">
-            <string>SaveLayout</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
-       <string>text</string>
+       <string>setting</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_8">
-       <item>
-        <widget class="QLabel" name="label_5">
-         <property name="font">
-          <font/>
-         </property>
-         <property name="text">
-          <string>TextColorSetting</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QGridLayout" name="gridLayout_2">
-         <item row="2" column="0">
-          <widget class="QPushButton" name="TimerStopColorChangeBtn">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="baseSize">
-            <size>
-             <width>120</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>TimerStop</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QFrame" name="TimerStopColorFrame">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>30</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="autoFillBackground">
-            <bool>true</bool>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::Shape::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Shadow::Raised</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QPushButton" name="TextBaseColorChangeBtn">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="baseSize">
-            <size>
-             <width>120</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>TextBase</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QFrame" name="TextBaseColorFrame">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>30</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="autoFillBackground">
-            <bool>true</bool>
-           </property>
-           <property name="styleSheet">
-            <string notr="true"/>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::Shape::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Shadow::Raised</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QFrame" name="TimerColorFrame">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>30</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="autoFillBackground">
-            <bool>true</bool>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::Shape::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Shadow::Raised</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QPushButton" name="TimerColorChangeBtn">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="baseSize">
-            <size>
-             <width>120</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Timer</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
        <item>
         <widget class="QLabel" name="label_6">
          <property name="font">
@@ -1026,52 +492,95 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="textSelectBox"/>
-       </item>
-       <item>
-        <widget class="QPushButton" name="fontSetting">
-         <property name="text">
-          <string>FontSetting</string>
+        <layout class="QGridLayout" name="gridLayout_7">
+         <property name="leftMargin">
+          <number>0</number>
          </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_21">
-         <item>
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>Font：</string>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="textSelectBox"/>
+         </item>
+         <item row="1" column="3">
+          <widget class="QComboBox" name="textAlignBox">
+           <property name="maximumSize">
+            <size>
+             <width>130</width>
+             <height>16777215</height>
+            </size>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QLabel" name="FontLabel">
-           <property name="autoFillBackground">
-            <bool>true</bool>
-           </property>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_5">
            <property name="text">
-            <string/>
+            <string>TextName</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="label_16">
+           <property name="text">
+            <string>TextAlign</string>
            </property>
           </widget>
          </item>
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_22">
-         <item>
-          <widget class="QLabel" name="label_8">
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="0">
+          <widget class="QPushButton" name="fontSetting">
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <property name="text">
-            <string>Size：</string>
+            <string>FontSetting</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QLabel" name="FontSizeLabel">
-           <property name="autoFillBackground">
-            <bool>true</bool>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="StyleColorBtn">
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>16777215</height>
+            </size>
            </property>
            <property name="text">
-            <string/>
+            <string>ColorSetting</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="TimerStopColorChangeBtn">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>130</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="baseSize">
+            <size>
+             <width>120</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>TimerStopColor</string>
            </property>
           </widget>
          </item>
@@ -1100,6 +609,48 @@
            </property>
            <property name="text">
             <string>outline color</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_19">
+         <item>
+          <widget class="QLabel" name="label_28">
+           <property name="text">
+            <string>TextPosition</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="posX_text">
+           <property name="maximum">
+            <double>99.989999999999995</double>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="posY_text"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QGridLayout" name="gridLayout_19">
+         <property name="leftMargin">
+          <number>150</number>
+         </property>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="LoadPosSettingBtn">
+           <property name="text">
+            <string>LoadLayout</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="SavePosSettingBtn">
+           <property name="text">
+            <string>SaveLayout</string>
            </property>
           </widget>
          </item>

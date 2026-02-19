@@ -21,10 +21,11 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QCheckBox>
+#include <QDoubleSpinBox>
 
-// GameTitle～Commentaryの日本語訳と対応するものをmapで追加
-// <日本語, 英語> のペア
-std::map<QString, QString> textElementMap = {
+// UI上の表示名（日本語）とプログラム内部のID（英語）を紐付けるマップ
+static const std::map<QString, QString> textElementMap =
+{
 	{"ゲームタイトル", "GameTitle"},
 	{"カテゴリ", "Category"},
 	{"ハードウェア", "Hardware"},
@@ -42,7 +43,7 @@ std::map<QString, QString> textElementMap = {
 	{"解説コメント", "Commentary"}
 };
 
-// ヘルパー関数：キーワードに一致するカラムインデックスを探す
+// スケジュール解析用ヘルパー
 int findColumnIndexByKeywords(const std::vector<std::string> &columns, const std::vector<QString> &keywords)
 {
 	for (int i = 0; i < (int)columns.size(); ++i) {
@@ -56,7 +57,11 @@ int findColumnIndexByKeywords(const std::vector<std::string> &columns, const std
 	return -1;
 }
 
-RTAPluginDock::RTAPluginDock(QWidget *parent) : QWidget(parent), ui(new Ui::RTAPluginDock)
+RTAPluginDock::RTAPluginDock(QWidget *parent)
+	: QWidget(parent),
+	  ui(new Ui::RTAPluginDock),
+	  timer(nullptr),
+	  posUpdateTimer(nullptr) // 必ずnullptrで初期化してクラッシュを防ぐ
 {
 	ui->setupUi(this);
 
@@ -65,12 +70,8 @@ RTAPluginDock::RTAPluginDock(QWidget *parent) : QWidget(parent), ui(new Ui::RTAP
 	ui->timerStopButton->setEnabled(false);
 	ui->TimerOnlyBtn->setChecked(true);
 
-	// デフォルト設定
+	// デフォルトフォント
 	currentFont = QFont("Arial", 48);
-	overlayColors["TextBase"] = 0xFFFFFF; // 白 (BGR: 0xFFFFFF)
-	overlayColors["CountUpTimer"] = 0xFFFFFF;
-
-	// --- シグナル/スロット接続 ---
 
 	// Doneボタン: 現在のUI入力を確定させ、JSONに保存
 	connect(ui->textDone, &QPushButton::clicked, this, &RTAPluginDock::onUpdateDoneButtonClicked);
@@ -169,6 +170,12 @@ RTAPluginDock::RTAPluginDock(QWidget *parent) : QWidget(parent), ui(new Ui::RTAP
 		ui->timerStartButton->setEnabled(true);
 		ui->textDone->setEnabled(true);
 		this->overlayColors["CountUpTimer"] = this->timerColor;
+
+		overlayValues["RunnerTimer_1"] = "";
+		overlayValues["RunnerTimer_2"] = "";
+		overlayValues["RunnerTimer_3"] = "";
+		overlayValues["RunnerTimer_4"] = "";
+
 		this->SaveOverlayData();
 	});
 
@@ -196,57 +203,22 @@ RTAPluginDock::RTAPluginDock(QWidget *parent) : QWidget(parent), ui(new Ui::RTAP
 		}
 	});
 
-	// 設定：フォント
-	connect(ui->fontSetting, &QPushButton::clicked, this, &RTAPluginDock::onFontChangeButtonClicked);
-
-	// 設定：テキストベースカラー
-	connect(ui->TextBaseColorChangeBtn, &QPushButton::clicked, this, [this]() {
-		QColor color = QColorDialog::getColor(Qt::white, this, "ベースカラーの選択");
-		if (color.isValid()) {
-			this->overlayColors["TextBase"] = (color.blue() << 16) | (color.green() << 8) | color.red();
-			ui->TextBaseColorFrame->setStyleSheet("background-color: " + color.name());
-			this->SaveOverlayData();
-		}
-	});
-
-	// 設定：タイマーカラー
-	connect(ui->TimerColorChangeBtn, &QPushButton::clicked, this, [this]() {
-		QColor color = QColorDialog::getColor(Qt::white, this, "タイマー稼働色の選択");
-		if (color.isValid()) {
-			this->timerColor = (color.blue() << 16) | (color.green() << 8) | color.red();
-			ui->TimerColorFrame->setStyleSheet("background-color: " + color.name());
-			this->SaveOverlayData();
-		}
-	});
-
-	// 設定：タイマーストップカラー
-	connect(ui->TimerStopColorChangeBtn, &QPushButton::clicked, this, [this]() {
-		QColor color = QColorDialog::getColor(Qt::white, this, "タイマーストップ色の選択");
-		if (color.isValid()) {
-			this->timerStopColor = (color.blue() << 16) | (color.green() << 8) | color.red();
-			ui->TimerStopColorFrame->setStyleSheet("background-color: " + color.name());
-			this->SaveOverlayData();
-		}
-	});
-
-	// 設定：アウトライン
-	connect(ui->outlineCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		this->outlineEnabled = (state == Qt::Checked);
-		this->SaveOverlayData();
-	});
-
 	// 走者タイマーストップボタン
 	connect(ui->timerStopButton_P1, &QPushButton::clicked, this, [this]() {
-		overlayValues["RunnerTimer_1"] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		overlayValues["RunnerTimer_1"] =
+			ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
 	});
 	connect(ui->timerStopButton_P2, &QPushButton::clicked, this, [this]() {
-		overlayValues["RunnerTimer_2"] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		overlayValues["RunnerTimer_2"] =
+			ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
 	});
 	connect(ui->timerStopButton_P3, &QPushButton::clicked, this, [this]() {
-		overlayValues["RunnerTimer_3"] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		overlayValues["RunnerTimer_3"] =
+			ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
 	});
 	connect(ui->timerStopButton_P4, &QPushButton::clicked, this, [this]() {
-		overlayValues["RunnerTimer_4"] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		overlayValues["RunnerTimer_4"] =
+			ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
 	});
 
 	// 配置情報の保存
@@ -257,246 +229,315 @@ RTAPluginDock::RTAPluginDock(QWidget *parent) : QWidget(parent), ui(new Ui::RTAP
 	// 配置情報のシグナルを一括で接続
 	SetupPositionSignals();
 
-	// TextComboxの初期化
-	ui->textSelectBox->clear();
-
-	// textSelectBoxにtextElementMapのキーを全て追加
-	for (const auto &pair : textElementMap) {
-		ui->textSelectBox->addItem(pair.first);
-	}
+	SetupStyleSignals();
 }
 
 RTAPluginDock::~RTAPluginDock()
 {
-	delete this->posUpdateTimer;
+	// posUpdateTimerは親(this)を持っているので自動削除されますが、明示的なdeleteも安全です
 	delete ui;
 }
 
-/**
- * @brief 配置情報の信号を一括で接続します。
- */
 void RTAPluginDock::SetupPositionSignals()
 {
-	// タイマーの初期化（未作成の場合）
-	if (!this->posUpdateTimer) {
-		this->posUpdateTimer = new QTimer(this);
-		this->posUpdateTimer->setSingleShot(true);
-		this->posUpdateTimer->setInterval(30);
-		connect(this->posUpdateTimer, &QTimer::timeout, this, &RTAPluginDock::SaveOverlayData);
-	}
-
-	// すべての QDoubleSpinBox を自動接続
-	QList<QDoubleSpinBox *> allDoubleSpinBoxes = this->findChildren<QDoubleSpinBox *>();
-	for (QDoubleSpinBox *sb : allDoubleSpinBoxes) {
-		QString name = sb->objectName();
-		if (name.startsWith("posX_") || name.startsWith("posY_")) {
-
-			// --- 数値の上限・下限と精度をコード側で一括設定 ---
-			sb->setRange(-10000.0, 10000.0); // 座標として十分な範囲を設定
-			sb->setDecimals(2);              // 小数点以下2桁を表示
-			sb->setSingleStep(1.0);          // 上下ボタンでの変化量を1.0に設定
-
-			// 引数の型を double に合わせる（またはラムダの引数を省略する）
-			connect(sb, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double) { this->posUpdateTimer->start(); });
+	// 1. 全要素の初期座標を 0, 0 で初期化
+	for (auto const &[name, id] : textElementMap) {
+		if (posList.find(id) == posList.end()) {
+			posList[id] = QPointF(0.0, 0.0);
 		}
 	}
+
+	// 2. 編集用SpinBoxの設定
+	ui->posX_text->setRange(-10000.0, 10000.0);
+	ui->posY_text->setRange(-10000.0, 10000.0);
+	ui->posX_text->setDecimals(2);
+	ui->posY_text->setDecimals(2);
+
+	// 3. コンボボックスの選択が切り替わった時、SpinBoxに値を反映させる
+	connect(ui->textSelectBox, &QComboBox::currentTextChanged, this, [this](const QString &name) {
+		QString id = textElementMap.at(name);
+		QPointF currentPos = posList[id];
+
+		// 信号のループを防ぐため一時的にブロック
+		ui->posX_text->blockSignals(true);
+		ui->posY_text->blockSignals(true);
+
+		ui->posX_text->setValue(currentPos.x());
+		ui->posY_text->setValue(currentPos.y());
+
+		ui->posX_text->blockSignals(false);
+		ui->posY_text->blockSignals(false);
+	});
+
+	// 4. 編集用SpinBoxの値が変わった時、mapの値を更新して保存する
+	auto onPosEdited = [this](double) {
+        QString displayName = ui->textSelectBox->currentText();
+        if (textElementMap.count(displayName)) {
+            QString id = textElementMap.at(displayName);
+            posList[id] = QPointF(ui->posX_text->value(), ui->posY_text->value());
+            if (posUpdateTimer) posUpdateTimer->start();
+
+			this->SaveOverlayData();
+        }
+    };
+
+	connect(ui->posX_text, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, onPosEdited);
+	connect(ui->posY_text, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, onPosEdited);
 }
 
-/**
- * @brief データをJSON出力し、同時にOBSのブラウザソースのCSSも更新します。
- */
+void RTAPluginDock::SetupStyleSignals()
+{
+	// 初期化
+	QFont defaultFont("Arial", 48);
+	for (auto const &[name, id] : textElementMap) {
+		fontList[id] = defaultFont;
+		colorList[id] = "#FFFFFF";
+		alignList[id] = "center"; // デフォルトは中央揃え
+	}
+
+	// 対象選択ComboBox
+	ui->textSelectBox->clear();
+	for (auto const &[name, id] : textElementMap)
+		ui->textSelectBox->addItem(name);
+
+	// アライメント選択ComboBox (UI側に textAlignBox がある想定)
+	ui->textAlignBox->clear();
+	ui->textAlignBox->addItem("左揃え", "left");
+	ui->textAlignBox->addItem("中央揃え", "center");
+	ui->textAlignBox->addItem("右揃え", "right");
+
+	// 対象要素が切り替わったら、現在のアライメント値をComboBoxに反映
+	connect(ui->textSelectBox, &QComboBox::currentTextChanged, this, [this](const QString &name) {
+		QString id = textElementMap.at(name);
+		int idx = ui->textAlignBox->findData(alignList[id]);
+		ui->textAlignBox->setCurrentIndex(idx);
+	});
+
+	// アライメント変更時の接続
+	connect(ui->textAlignBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+		QString id = textElementMap.at(ui->textSelectBox->currentText());
+		alignList[id] = ui->textAlignBox->itemData(index).toString();
+		this->SaveOverlayData();
+	});
+
+	connect(ui->fontSetting, &QPushButton::clicked, this, &RTAPluginDock::onFontChangeButtonClicked);
+
+	connect(ui->StyleColorBtn, &QPushButton::clicked, this, [this]() {
+		QString id = textElementMap.at(ui->textSelectBox->currentText());
+		QColor color = QColorDialog::getColor(QColor(colorList[id]), this, "色選択");
+		if (color.isValid()) {
+			colorList[id] = color.name();
+			this->SaveOverlayData();
+		}
+	});
+
+	// 設定：タイマーストップカラー
+	connect(ui->TimerStopColorChangeBtn, &QPushButton::clicked, this, [this]() {
+		QColor color = QColorDialog::getColor(QColor::fromRgb(timerStopColor), this, "停止時カラー選択");
+		if (color.isValid()) {
+			this->timerStopColor = (color.blue() << 16) | (color.green() << 8) | color.red();
+			this->SaveOverlayData();
+		}
+	});
+
+	// 設定：アウトライン
+	connect(ui->outlineCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
+		this->outlineEnabled = (state == Qt::Checked);
+		this->SaveOverlayData();
+	});
+}
+
 void RTAPluginDock::SaveOverlayData()
 {
-	// 1. テキストデータの収集
-	overlayValues["GameTitle"] = ui->GameTitleText->text();
-	overlayValues["RunnerName_1"] = ui->RunnerText_1->text();
-	overlayValues["RunnerName_2"] = ui->RunnerText_2->text();
-	overlayValues["RunnerName_3"] = ui->RunnerText_3->text();
-	overlayValues["RunnerName_4"] = ui->RunnerText_4->text();
-	overlayValues["Category"] = ui->CategoryText->text();
-	overlayValues["Hardware"] = ui->HardwareText->text();
-	overlayValues["Commentary"] = ui->CommentaryText->text();
-	overlayValues["EstimateTime"] = ui->EstimateTime->time().toString("HH:mm:ss");
-	overlayValues["CountUpTimer"] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
-	overlayValues["CountDownTimer"] = ui->CowntDownOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
 	QJsonObject root;
-	QJsonObject valuesObj;
-	for (auto it = overlayValues.begin(); it != overlayValues.end(); ++it) {
-		valuesObj.insert(it.key(), it.value());
-	}
-	root.insert("values", valuesObj);
 
-	// 2. スタイル・座標情報の収集
+	// values
+	QJsonObject valObj;
+	valObj.insert("GameTitle", ui->GameTitleText->text());
+	valObj.insert("RunnerName_1", ui->RunnerText_1->text());
+	valObj.insert("RunnerName_2", ui->RunnerText_2->text());
+	valObj.insert("RunnerName_3", ui->RunnerText_3->text());
+	valObj.insert("RunnerName_4", ui->RunnerText_4->text());
+	valObj.insert("Category", ui->CategoryText->text());
+	valObj.insert("Hardware", ui->HardwareText->text());
+	valObj.insert("Commentary", ui->CommentaryText->text());
+	valObj.insert("EstimateTime", ui->EstimateTime->time().toString("HH:mm:ss"));
+	valObj.insert("CountUpTimer", ui->CountUpTimer->time().toString("HH:mm:ss"));
+	valObj.insert("CountDownTimer", ui->CountDonwTimer->time().toString("HH:mm:ss"));
+	root.insert("values", valObj);
+
+	// styles
+	bool running = (timer && timer->isActive());
 	QJsonObject styleObj;
-	styleObj.insert("fontFamily", currentFont.family());
-	styleObj.insert("fontSize", currentFont.pointSize());
-	styleObj.insert("baseColor", QColor(overlayColors["TextBase"]).name());
-	styleObj.insert("timerColor", QColor(overlayColors["CountUpTimer"]).name());
-	root.insert("style", styleObj);
+	for (auto const &[id, font] : fontList) {
+		QJsonObject s;
+		s.insert("fontFamily", font.family());
+		s.insert("fontSize", font.pointSize());
+		s.insert("isBold", font.bold());
+		s.insert("isItalic", font.italic());
+		s.insert("color", colorList[id]);
+		s.insert("textAlign", alignList[id]);
+		if (id.contains("Timer")) {
+			s.insert("isRunning", running);
+			s.insert("stopColor", QColor(QRgb(timerStopColor)).name());
+		}
+		styleObj.insert(id, s);
+	}
+	root.insert("styles", styleObj);
 
-	QJsonObject transforms;
-	auto createPosObj = [](double x, double y) {
-		QJsonObject obj;
-		obj.insert("x", x);
-		obj.insert("y", y);
-		return obj;
-	};
+	// transforms (posListから生成、正しいID形式にする)
+	QJsonObject transObj;
+	for (auto const &[id, pos] : posList) {
+		transObj.insert("posX_" + id, pos.x());
+		transObj.insert("posY_" + id, pos.y());
+	}
+	root.insert("transforms", transObj);
 
-	// UIからの座標取得（DoubleSpinBoxに対応）
-	transforms.insert("GameTitle", createPosObj(ui->posX_GameTitle->value(), ui->posY_GameTitle->value()));
-	transforms.insert("Category", createPosObj(ui->posX_Category->value(), ui->posY_Category->value()));
-	transforms.insert("Hardware", createPosObj(ui->posX_Hardware->value(), ui->posY_Hardware->value()));
-	transforms.insert("EstimateTime", createPosObj(ui->posX_EstimateTime->value(), ui->posY_EstimateTime->value()));
-	transforms.insert("CountUpTimer", createPosObj(ui->posX_CountUpTimer->value(), ui->posY_CountUpTimer->value()));
-	transforms.insert("CountDownTimer",
-			  createPosObj(ui->posX_CountDownTimer->value(), ui->posY_CountDownTimer->value()));
-
-	transforms.insert("RunnerTimer_1",
-			  createPosObj(ui->posX_RunnerTimer_1->value(), ui->posY_RunnerTimer_1->value()));
-	transforms.insert("RunnerTimer_2",
-			  createPosObj(ui->posX_RunnerTimer_2->value(), ui->posY_RunnerTimer_2->value()));
-	transforms.insert("RunnerTimer_3",
-			  createPosObj(ui->posX_RunnerTimer_3->value(), ui->posY_RunnerTimer_3->value()));
-	transforms.insert("RunnerTimer_4",
-			  createPosObj(ui->posX_RunnerTimer_4->value(), ui->posY_RunnerTimer_4->value()));
-
-	transforms.insert("RunnerName_1", createPosObj(ui->posX_RunnerName_1->value(), ui->posY_RunnerName_1->value()));
-	transforms.insert("RunnerName_2", createPosObj(ui->posX_RunnerName_2->value(), ui->posY_RunnerName_2->value()));
-	transforms.insert("RunnerName_3", createPosObj(ui->posX_RunnerName_3->value(), ui->posY_RunnerName_3->value()));
-	transforms.insert("RunnerName_4", createPosObj(ui->posX_RunnerName_4->value(), ui->posY_RunnerName_4->value()));
-
-	transforms.insert("Commentary", createPosObj(ui->posX_Commentary->value(), ui->posY_Commentary->value()));
-
-	//transforms.insert("CommentaryFlex", isFlex);
-
-
-	root.insert("transforms", transforms);
-
-	// 3. JSONファイルへの書き出し
-	char *dataPathC = obs_module_get_config_path(obs_current_module(), "");
-	QString dataPath = QString::fromUtf8(dataPathC);
-	bfree(dataPathC);
-	QDir().mkpath(dataPath);
-
-	QFile file(dataPath + "/overlay_data.json");
+	// 保存実行
+	char *pathC = obs_module_get_config_path(obs_current_module(), "");
+	QString path = QString::fromUtf8(pathC);
+	bfree(pathC);
+	QDir().mkpath(path);
+	QFile file(path + "/overlay_data.json");
 	if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
 		file.write(QJsonDocument(root).toJson());
 		file.close();
 	}
-
-
-	//// 5. OBSブラウザソースのCSS更新（Flex対応ロジックを追加）
-	//obs_source_t *source = obs_get_source_by_name("RTA_Overlay");
-	//if (source) {
-	//	QString css = "/* Auto-generated by RTA Support Plugin */\n";
-	//	css += "body { margin: 0; padding: 0; overflow: hidden; background-color: transparent; }\n";
-	//	css += ".overlay-item { position: absolute; }\n"; // 基本は絶対配置
-
-	//	// Flex用コンテナのスタイル（必要に応じてHTML構造に合わせてIDを変更してください）
-	//	if (isFlex) {
-	//		css += "#RunnerContainer { display: flex; gap: 10px; align-items: center; position: absolute; }\n";
-	//	}
-
-	//	for (auto it = transforms.begin(); it != transforms.end(); ++it) {
-	//		if (it.value().isObject()) {
-	//			QString id = it.key();
-	//			QJsonObject pos = it.value().toObject();
-
-	//			// Flex有効時の例外処理: Commentary は absolute を解除する
-	//			if (isFlex && id == "Commentary") {
-	//				css += QString("#%1 { position: static !important; }\n").arg(id);
-	//			} else {
-	//				css += QString("#%1 { left: %2px; top: %3px; position: absolute; }\n")
-	//					       .arg(id)
-	//					       .arg(pos["x"].toDouble())
-	//					       .arg(pos["y"].toDouble());
-	//			}
-	//		}
-	//	}
-
-	//	obs_data_t *settings = obs_source_get_settings(source);
-	//	obs_data_set_string(settings, "css", css.toUtf8().constData());
-	//	obs_source_update(source, settings);
-	//	obs_data_release(settings);
-	//	obs_source_release(source);
-	//}
 }
 
 /**
- * @brief 名前を付けて保存
+ * @brief OBSソース「RTA_Overlay」のCSS設定を更新する。レイアウト変更時のみ実行。
  */
+void RTAPluginDock::UpdateObsSourceStyle()
+{
+	obs_source_t *src = obs_get_source_by_name("RTA_Overlay");
+	if (!src)
+		return;
+
+	bool running = (timer && timer->isActive());
+	QString css = "body { margin: 0; padding: 0; overflow: hidden; background-color: transparent; }\n";
+	css += ".overlay-item { position: absolute; }\n";
+
+	for (auto const &[id, font] : fontList) {
+		double x = posList[id].x();
+		double y = posList[id].y();
+		QString align = alignList[id];
+		QString transform = (align == "center") ? "translateX(-50%)"
+							: (align == "right" ? "translateX(-100%)" : "none");
+
+		QString color = colorList[id];
+		if (id.contains("Timer") && !running)
+			color = QColor(QRgb(timerStopColor)).name();
+
+		css += QString("#%1 { left: %2px; top: %3px; transform: %4; text-align: %5; color: %6; ")
+			       .arg(id)
+			       .arg(x)
+			       .arg(y)
+			       .arg(transform)
+			       .arg(align)
+			       .arg(color);
+		css += QString("font-family: '%1'; font-size: %2px; %3 %4 }\n")
+			       .arg(font.family())
+			       .arg(font.pointSize())
+			       .arg(font.bold() ? "font-weight: bold;" : "")
+			       .arg(font.italic() ? "font-style: italic;" : "");
+	}
+
+	obs_data_t *settings = obs_source_get_settings(src);
+	obs_data_set_string(settings, "css", css.toUtf8().constData());
+	obs_source_update(src, settings);
+	obs_data_release(settings);
+	obs_source_release(src);
+}
+
 void RTAPluginDock::onSavePosSettingClicked()
 {
-	// OBSのプラグイン設定フォルダを初期ディレクトリとして取得
-	char *dataPathC = obs_module_get_config_path(obs_current_module(), "");
-	QString dataPath = QString::fromUtf8(dataPathC);
-	bfree(dataPathC);
-
-	// フォルダが存在しない場合は作成
-	QDir().mkpath(dataPath);
-
-	QString fileName = QFileDialog::getSaveFileName(this, "座標設定を保存",
-							dataPath, // 初期ディレクトリをプラグイン設定フォルダに変更
-							"JSON Files (*.json)");
-
+	char *pathC = obs_module_get_config_path(obs_current_module(), "");
+	QString path = QString::fromUtf8(pathC);
+	bfree(pathC);
+	QString fileName = QFileDialog::getSaveFileName(this, "設定保存", path, "JSON (*.json)");
 	if (fileName.isEmpty())
 		return;
 
-	QJsonObject transforms;
-	auto allSpinBoxes = this->findChildren<QDoubleSpinBox *>();
-	for (QDoubleSpinBox *sb : allSpinBoxes) {
-		if (sb->objectName().contains("posX_") || sb->objectName().contains("posY_")) {
-			transforms.insert(sb->objectName(), sb->value());
-		}
+	QJsonObject exportObj;
+	QJsonObject trans;
+	for (auto const &[id, pos] : posList) {
+		trans.insert("posX_" + id, pos.x());
+		trans.insert("posY_" + id, pos.y());
 	}
+	exportObj.insert("transforms", trans);
+
+	QJsonObject styles;
+	for (auto const &[id, font] : fontList) {
+		QJsonObject s;
+		s.insert("family", font.family());
+		s.insert("size", font.pointSize());
+		s.insert("bold", font.bold());
+		s.insert("italic", font.italic());
+		s.insert("color", colorList[id]);
+		s.insert("align", alignList[id]);
+		styles.insert(id, s);
+	}
+	exportObj.insert("styles", styles);
 
 	QFile file(fileName);
 	if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		file.write(QJsonDocument(transforms).toJson());
+		file.write(QJsonDocument(exportObj).toJson());
 		file.close();
-		QMessageBox::information(this, "成功", "保存しました。");
 	}
 }
 
-/**
- * @brief 設定の読み込み
- */
 void RTAPluginDock::onLoadPosSettingClicked()
 {
-	// OBSのプラグイン設定フォルダを初期ディレクトリとして取得
-	char *dataPathC = obs_module_get_config_path(obs_current_module(), "");
-	QString dataPath = QString::fromUtf8(dataPathC);
-	bfree(dataPathC);
-
-	QString fileName = QFileDialog::getOpenFileName(this, "座標設定を読み込み",
-							dataPath, // 初期ディレクトリをプラグイン設定フォルダに変更
-							"JSON Files (*.json)");
-
+	char *pathC = obs_module_get_config_path(obs_current_module(), "");
+	QString path = QString::fromUtf8(pathC);
+	bfree(pathC);
+	QString fileName = QFileDialog::getOpenFileName(this, "設定読込", path, "JSON (*.json)");
 	if (fileName.isEmpty())
 		return;
 
 	QFile file(fileName);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 		return;
-
 	QJsonObject data = QJsonDocument::fromJson(file.readAll()).object();
-	file.close();
 
-	auto allSpinBoxes = this->findChildren<QDoubleSpinBox *>();
-	for (QDoubleSpinBox *sb : allSpinBoxes) {
-		if (data.contains(sb->objectName())) {
-			sb->setValue(data[sb->objectName()].toDouble());
+	if (data.contains("transforms")) {
+		QJsonObject trans = data["transforms"].toObject();
+		for (auto const &[name, id] : textElementMap) {
+			if (trans.contains("posX_" + id)) {
+				posList[id] = QPointF(trans["posX_" + id].toDouble(), trans["posY_" + id].toDouble());
+			}
+		}
+		emit ui->textSelectBox->currentTextChanged(ui->textSelectBox->currentText());
+	}
+	if (data.contains("styles")) {
+		QJsonObject styles = data["styles"].toObject();
+		for (auto it = styles.begin(); it != styles.end(); ++it) {
+			QJsonObject s = it.value().toObject();
+			QString id = it.key();
+			QFont f(s["family"].toString());
+			f.setPointSize(s["size"].toInt());
+			f.setBold(s["bold"].toBool());
+			f.setItalic(s["italic"].toBool());
+			fontList[id] = f;
+			colorList[id] = s["color"].toString();
+			alignList[id] = s["align"].toString();
 		}
 	}
-
 	this->SaveOverlayData();
+	this->UpdateObsSourceStyle();
 }
 
-void RTAPluginDock::onUpdateDoneButtonClicked()
+void RTAPluginDock::onFontChangeButtonClicked()
 {
-	this->initCountDownTimer = ui->CountDonwTimer->time();
-	SaveOverlayData();
-	QMessageBox::information(this, "完了", "設定をオーバーレイに反映しました。");
+	QString id = textElementMap.at(ui->textSelectBox->currentText());
+	bool ok;
+	QFont font = QFontDialog::getFont(&ok, fontList[id], this, "フォント選択");
+	if (ok) {
+		fontList[id] = font;
+		this->SaveOverlayData();
+		this->UpdateObsSourceStyle();
+	}
 }
 
 void RTAPluginDock::loadAndParseJsonFile()
@@ -571,6 +612,13 @@ void RTAPluginDock::loadAndParseJsonFile()
 	QMessageBox::information(this, "成功", "スケジュールの読み込みが完了しました。");
 }
 
+void RTAPluginDock::onUpdateDoneButtonClicked()
+{
+	this->initCountDownTimer = ui->CountDonwTimer->time();
+	SaveOverlayData();
+	//QMessageBox::information(this, "完了", "設定をオーバーレイに反映しました。");
+}
+
 void RTAPluginDock::onApplyScheduleClicked()
 {
 	ui->gameSelectBox->clear();
@@ -604,16 +652,4 @@ void RTAPluginDock::onApplyScheduleClicked()
 	}
 
 	SaveOverlayData();
-}
-
-void RTAPluginDock::onFontChangeButtonClicked()
-{
-	bool ok;
-	QFont font = QFontDialog::getFont(&ok, currentFont, this, "フォントを選択");
-	if (ok) {
-		currentFont = font;
-		ui->FontLabel->setText(currentFont.family());
-		ui->FontSizeLabel->setText(QString::number(currentFont.pointSize()));
-		SaveOverlayData();
-	}
 }
