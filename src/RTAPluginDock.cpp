@@ -149,8 +149,12 @@ RTAPluginDock::RTAPluginDock(QWidget *parent)
 		ui->timerStopButton->setEnabled(true);
 		ui->timeResetButton->setEnabled(false);
 		ui->textDone->setEnabled(false);
-		this->overlayColors["CountUpTimer"] = this->timerColor;
+		this->timerState = "Running"; // タイマー状態を更新
 		this->SaveOverlayData();
+
+		if (this->autoScreenShotOnStart) {
+			obs_frontend_take_screenshot();
+		}
 	});
 
 	// タイマー Stop
@@ -158,8 +162,12 @@ RTAPluginDock::RTAPluginDock(QWidget *parent)
 		timer->stop();
 		ui->timerStartButton->setEnabled(true);
 		ui->timeResetButton->setEnabled(true);
-		this->overlayColors["CountUpTimer"] = this->timerStopColor;
+		this->timerState = "Stopped"; // タイマー状態を更新
 		this->SaveOverlayData();
+
+		if (this->autoScreenShotOnStop) {
+			obs_frontend_take_screenshot();
+		}
 	});
 
 	// タイマー Reset
@@ -169,12 +177,12 @@ RTAPluginDock::RTAPluginDock(QWidget *parent)
 		ui->timerStopButton->setEnabled(false);
 		ui->timerStartButton->setEnabled(true);
 		ui->textDone->setEnabled(true);
-		this->overlayColors["CountUpTimer"] = this->timerColor;
-
-		overlayValues["RunnerTimer_1"] = "";
-		overlayValues["RunnerTimer_2"] = "";
-		overlayValues["RunnerTimer_3"] = "";
-		overlayValues["RunnerTimer_4"] = "";
+		this->timerState = "Reset"; // タイマー状態を更新
+		
+		// 各走者のタイマーをクリア
+		for (int i = 0; i < 4; i++) {
+			this->runnerTimers[i] = "";
+		}
 
 		this->SaveOverlayData();
 	});
@@ -205,20 +213,20 @@ RTAPluginDock::RTAPluginDock(QWidget *parent)
 
 	// 走者タイマーストップボタン
 	connect(ui->timerStopButton_P1, &QPushButton::clicked, this, [this]() {
-		overlayValues["RunnerTimer_1"] =
-			ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		this->runnerTimers[0] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		this->SaveOverlayData(); // 即時反映
 	});
 	connect(ui->timerStopButton_P2, &QPushButton::clicked, this, [this]() {
-		overlayValues["RunnerTimer_2"] =
-			ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		this->runnerTimers[1] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		this->SaveOverlayData(); // 即時反映
 	});
 	connect(ui->timerStopButton_P3, &QPushButton::clicked, this, [this]() {
-		overlayValues["RunnerTimer_3"] =
-			ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		this->runnerTimers[2] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		this->SaveOverlayData(); // 即時反映
 	});
 	connect(ui->timerStopButton_P4, &QPushButton::clicked, this, [this]() {
-		overlayValues["RunnerTimer_4"] =
-			ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		this->runnerTimers[3] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+		this->SaveOverlayData(); // 即時反映
 	});
 
 	// 配置情報の保存
@@ -230,6 +238,33 @@ RTAPluginDock::RTAPluginDock(QWidget *parent)
 	SetupPositionSignals();
 
 	SetupStyleSignals();
+
+
+	// スクショボタン
+	connect(ui->ScreenShotBtn, &QPushButton::clicked, this, []() {
+		obs_frontend_take_screenshot();
+	});
+
+	// チェックボックスの状態変化をキャッチしてフラグを更新
+	connect(ui->TimerStartScreenShotCheck, &QCheckBox::checkStateChanged, this, [this](int state) {
+			this->autoScreenShotOnStart = (state == Qt::Checked); 
+	});
+	connect(ui->TimerStopScreenShotCheck, &QCheckBox::checkStateChanged, this, [this](int state) {
+			this->autoScreenShotOnStop = (state == Qt::Checked); 
+	});
+
+	// タイマー開始時にスクショを撮る
+	connect(ui->timerStartButton, &QPushButton::clicked, this, [this]() {
+		if (this->autoScreenShotOnStart) {
+			obs_frontend_take_screenshot();
+		}
+	});
+	// タイマー停止時にスクショを撮る
+	connect(ui->timerStopButton, &QPushButton::clicked, this, [this]() {
+		if (this->autoScreenShotOnStop) {
+			obs_frontend_take_screenshot();
+		}
+	});
 }
 
 RTAPluginDock::~RTAPluginDock()
@@ -267,6 +302,16 @@ void RTAPluginDock::SetupPositionSignals()
 
 		ui->posX_text->blockSignals(false);
 		ui->posY_text->blockSignals(false);
+
+		// シグナルが発火して上書きされるのを防ぐため、一時的にブロックする
+		ui->outlineCheckBox->blockSignals(true);
+		ui->outlineCheckBox->setChecked(outlineEnabledList[id]);
+		ui->outlineCheckBox->blockSignals(false);
+
+		// ※もし太さ変更用のSpinBox (例: outlineSizeBox) を追加した場合は以下も記述
+		ui->outlineSize->blockSignals(true);
+		ui->outlineSize->setValue(outlineSizeList[id]);
+		ui->outlineSize->blockSignals(false);
 	});
 
 	// 4. 編集用SpinBoxの値が変わった時、mapの値を更新して保存する
@@ -292,7 +337,11 @@ void RTAPluginDock::SetupStyleSignals()
 	for (auto const &[name, id] : textElementMap) {
 		fontList[id] = defaultFont;
 		colorList[id] = "#FFFFFF";
-		alignList[id] = "center"; // デフォルトは中央揃え
+		alignList[id] = "center";
+		// --- 追加 ---
+		outlineEnabledList[id] = false;
+		outlineSizeList[id] = 2;
+		outlineColorList[id] = "#000000";
 	}
 
 	// 対象選択ComboBox
@@ -331,18 +380,62 @@ void RTAPluginDock::SetupStyleSignals()
 		}
 	});
 
-	// 設定：タイマーストップカラー
+	// タイマーストップカラー
 	connect(ui->TimerStopColorChangeBtn, &QPushButton::clicked, this, [this]() {
-		QColor color = QColorDialog::getColor(QColor::fromRgb(timerStopColor), this, "停止時カラー選択");
+		QColor color = QColorDialog::getColor(QColor(timerStopColor), this, "停止時カラー選択");
 		if (color.isValid()) {
-			this->timerStopColor = (color.blue() << 16) | (color.green() << 8) | color.red();
+			this->timerStopColor = color.name();
 			this->SaveOverlayData();
 		}
 	});
 
-	// 設定：アウトライン
+	//アウトライン有効化
 	connect(ui->outlineCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		this->outlineEnabled = (state == Qt::Checked);
+		QString id = textElementMap.at(ui->textSelectBox->currentText());
+		outlineEnabledList[id] = (state == Qt::Checked);
+		this->SaveOverlayData();
+	});
+
+	// アウトライン色変更ボタン
+	connect(ui->outlineColorButton, &QPushButton::clicked, this, [this]() {
+		QString id = textElementMap.at(ui->textSelectBox->currentText());
+		QColor color = QColorDialog::getColor(QColor(outlineColorList[id]), this, "アウトライン色選択");
+		if (color.isValid()) {
+			outlineColorList[id] = color.name();
+			this->SaveOverlayData();
+		}
+	});
+	
+	// アウトライン太さ変更
+	connect(ui->outlineSize, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int value) {
+		QString id = textElementMap.at(ui->textSelectBox->currentText());
+		outlineSizeList[id] = value;
+		this->SaveOverlayData();
+	});
+
+	// 名前の前にアイコンを表示するフラグ
+	connect(ui->showRunner1IconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
+		this->showIcons[0] = (state == Qt::Checked);
+		this->SaveOverlayData();
+	});
+	// 名前の前にアイコンを表示するフラグ
+	connect(ui->showRunner2IconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
+		this->showIcons[1] = (state == Qt::Checked);
+		this->SaveOverlayData();
+	});
+	// 名前の前にアイコンを表示するフラグ
+	connect(ui->showRunner3IconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
+		this->showIcons[2] = (state == Qt::Checked);
+		this->SaveOverlayData();
+	});
+	// 名前の前にアイコンを表示するフラグ
+	connect(ui->showRunner4IconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
+		this->showIcons[3] = (state == Qt::Checked);
+		this->SaveOverlayData();
+	});
+	// 名前の前にアイコンを表示するフラグ
+	connect(ui->showCommentaryIconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
+		this->showIcons[4] = (state == Qt::Checked);
 		this->SaveOverlayData();
 	});
 }
@@ -358,6 +451,10 @@ void RTAPluginDock::SaveOverlayData()
 	valObj.insert("RunnerName_2", ui->RunnerText_2->text());
 	valObj.insert("RunnerName_3", ui->RunnerText_3->text());
 	valObj.insert("RunnerName_4", ui->RunnerText_4->text());
+	valObj.insert("RunnerTimer_1", this->runnerTimers[0]);
+	valObj.insert("RunnerTimer_2", this->runnerTimers[1]);
+	valObj.insert("RunnerTimer_3", this->runnerTimers[2]);
+	valObj.insert("RunnerTimer_4", this->runnerTimers[3]);
 	valObj.insert("Category", ui->CategoryText->text());
 	valObj.insert("Hardware", ui->HardwareText->text());
 	valObj.insert("Commentary", ui->CommentaryText->text());
@@ -377,9 +474,12 @@ void RTAPluginDock::SaveOverlayData()
 		s.insert("isItalic", font.italic());
 		s.insert("color", colorList[id]);
 		s.insert("textAlign", alignList[id]);
+		s.insert("outlineEnabled", outlineEnabledList[id]);
+		s.insert("outlineSize", outlineSizeList[id]);
+		s.insert("outlineColor", outlineColorList[id]);
 		if (id.contains("Timer")) {
-			s.insert("isRunning", running);
-			s.insert("stopColor", QColor(QRgb(timerStopColor)).name());
+			s.insert("timerState", this->timerState);
+			s.insert("stopColor", QColor(timerStopColor).name());
 		}
 		styleObj.insert(id, s);
 	}
@@ -392,6 +492,16 @@ void RTAPluginDock::SaveOverlayData()
 		transObj.insert("posY_" + id, pos.y());
 	}
 	root.insert("transforms", transObj);
+
+	// settings (全体設定用)
+	QJsonObject settingsObj;
+	settingsObj.insert("showIcon_1", this->showIcons[0]);
+	settingsObj.insert("showIcon_2", this->showIcons[1]);
+	settingsObj.insert("showIcon_3", this->showIcons[2]);
+	settingsObj.insert("showIcon_4", this->showIcons[3]);
+	settingsObj.insert("showIcon_5", this->showIcons[4]);
+	
+	root.insert("settings", settingsObj);
 
 	// 保存実行
 	char *pathC = obs_module_get_config_path(obs_current_module(), "");
@@ -427,7 +537,7 @@ void RTAPluginDock::UpdateObsSourceStyle()
 
 		QString color = colorList[id];
 		if (id.contains("Timer") && !running)
-			color = QColor(QRgb(timerStopColor)).name();
+			color = QColor(timerStopColor).name();
 
 		css += QString("#%1 { left: %2px; top: %3px; transform: %4; text-align: %5; color: %6; ")
 			       .arg(id)
@@ -476,8 +586,12 @@ void RTAPluginDock::onSavePosSettingClicked()
 		s.insert("italic", font.italic());
 		s.insert("color", colorList[id]);
 		s.insert("align", alignList[id]);
+		s.insert("outlineEnabled", outlineEnabledList[id]);
+		s.insert("outlineSize", outlineSizeList[id]);
+		s.insert("outlineColor", outlineColorList[id]);
 		styles.insert(id, s);
 	}
+	styles.insert("stopColor", QColor(timerStopColor).name());
 	exportObj.insert("styles", styles);
 
 	QFile file(fileName);
@@ -522,7 +636,11 @@ void RTAPluginDock::onLoadPosSettingClicked()
 			fontList[id] = f;
 			colorList[id] = s["color"].toString();
 			alignList[id] = s["align"].toString();
+			outlineEnabledList[id] = s["outlineEnabled"].toBool();
+			outlineSizeList[id] = s["outlineSize"].toInt();
+			outlineColorList[id] = s["outlineColor"].toString();
 		}
+		this->timerStopColor = styles["stopColor"].toString();
 	}
 	this->SaveOverlayData();
 	this->UpdateObsSourceStyle();
@@ -565,6 +683,7 @@ void RTAPluginDock::loadAndParseJsonFile()
 
 	// カラム名の取得
 	std::vector<std::string> columnNames;
+	columnNames.push_back("");
 	if (this->scheduleData.contains("schedule")) {
 		auto scheduleObj = this->scheduleData["schedule"].toObject();
 		if (scheduleObj.contains("columns")) {
@@ -593,7 +712,7 @@ void RTAPluginDock::loadAndParseJsonFile()
 	const std::vector<QString> gameKeywords = {"Game", "Title", "ゲーム", "タイトル"};
 	const std::vector<QString> runnerKeywords = {"Runner", "Player", "走者", "プレイヤー"};
 	const std::vector<QString> categoryKeywords = {"Category", "カテゴリ"};
-	const std::vector<QString> hardwareKeywords = {"Hardware", "Hard", "機種", "機材"};
+	const std::vector<QString> hardwareKeywords = {"Hardware", "Hard", "機種", "機材", "Platform"};
 
 	int gi = findColumnIndexByKeywords(columnNames, gameKeywords);
 	int ri = findColumnIndexByKeywords(columnNames, runnerKeywords);
@@ -641,10 +760,10 @@ void RTAPluginDock::onApplyScheduleClicked()
 		auto dataArray = itemObj["data"].toArray();
 
 		GameData data;
-		data.gameTitle = dataArray[gi].toString();
-		data.runnerName = dataArray[ri].toString();
-		data.category = dataArray[ci].toString();
-		data.hardware = dataArray[hi].toString();
+		data.gameTitle = dataArray[gi - 1].toString();
+		data.runnerName = dataArray[ri - 1].toString();
+		data.category = dataArray[ci - 1].toString();
+		data.hardware = dataArray[hi - 1].toString();
 		data.estimateTime = itemObj["length_t"].toInt();
 
 		this->currentGameData.push_back(data);

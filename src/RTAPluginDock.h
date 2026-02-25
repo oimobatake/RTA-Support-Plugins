@@ -54,18 +54,22 @@ private:
 	QTimer *timer;
 
 	// 内部データ保持用
-	QMap<QString, QString> overlayValues; // ID -> テキスト
-	QMap<QString, int> overlayColors;     // ID -> BGR色
+	QString runnerTimers[4]; // 走者1〜4のストップしたタイマー時間
+	QString timerState = "Reset"; // タイマーの状態（例: "Running", "Stopped"）
 
 	QFont currentFont;
 	QTime initCountDownTimer;
 	QTimer* posUpdateTimer;
 
-	bool outlineEnabled = false;
-	int outlineSize = 2;
-	int currentOutlineColor = 0x000000;
-	int timerColor = 0xFFFFFF;
-	int timerStopColor = 0xFFFF00;
+	bool showIcons[5] = {false,false,false,false,false}; // アイコン表示のフラグ（5要素に拡張）
+
+	bool autoScreenShotOnStart = false; // 自動スクショのフラグ
+	bool autoScreenShotOnStop = false;  // 自動スクショのフラグ
+
+	std::map<QString, bool> outlineEnabledList;
+	std::map<QString, int> outlineSizeList;
+	std::map<QString, QString> outlineColorList;
+	QString timerStopColor = "0xFFFF00";
 
 	std::map<QString, QFont> fontList;
 	std::map<QString, QString> colorList;

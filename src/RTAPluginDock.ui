@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>357</width>
-    <height>629</height>
+    <width>375</width>
+    <height>626</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,10 +25,7 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="QGroupBox" name="groupBox_3">
-         <property name="title">
-          <string/>
-         </property>
+        <widget class="QFrame" name="frame_3">
          <layout class="QVBoxLayout" name="verticalLayout_6">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -178,176 +175,204 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox">
-         <property name="title">
-          <string/>
-         </property>
+        <widget class="QFrame" name="frame">
          <layout class="QVBoxLayout" name="verticalLayout_7">
           <item>
            <widget class="QComboBox" name="gameSelectBox"/>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_23">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_9">
-              <item>
-               <widget class="QLabel" name="GameTitleLabel">
-                <property name="text">
-                 <string>GameTitle</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="GameTitleText"/>
-              </item>
-             </layout>
+           <layout class="QGridLayout" name="gridLayout">
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="GameTitleText">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>150</width>
+                <height>16777215</height>
+               </size>
+              </property>
+             </widget>
             </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_8">
-              <item>
-               <widget class="QLabel" name="ESTLabel">
-                <property name="text">
-                 <string>EST</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QTimeEdit" name="EstimateTime">
-                <property name="displayFormat">
-                 <string>HH:mm:ss</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
+            <item row="1" column="2" colspan="3">
+             <widget class="QLabel" name="CategoryLabel_2">
+              <property name="text">
+               <string>Platform</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2" colspan="3">
+             <widget class="QLabel" name="ESTLabel">
+              <property name="maximumSize">
+               <size>
+                <width>16777213</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>EST</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="GameTitleLabel">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>GameTitle</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="5">
+             <widget class="QLineEdit" name="HardwareText"/>
+            </item>
+            <item row="0" column="5">
+             <widget class="QTimeEdit" name="EstimateTime">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="displayFormat">
+               <string>HH:mm:ss</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="CategoryLabel">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Category</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="CategoryText"/>
             </item>
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_22">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_14">
-              <item>
-               <widget class="QLabel" name="CategoryLabel">
-                <property name="text">
-                 <string>Category</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="CategoryText"/>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_15">
-              <item>
-               <widget class="QLabel" name="CategoryLabel_2">
-                <property name="text">
-                 <string>Hardware</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="HardwareText"/>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <item>
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0">
              <widget class="QLabel" name="label">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="text">
                <string>Runner1</string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="0" column="1">
              <widget class="QLineEdit" name="RunnerText_1"/>
             </item>
-            <item>
+            <item row="0" column="2">
              <widget class="QPushButton" name="timerStopButton_P1">
               <property name="text">
                <string>Stop</string>
               </property>
              </widget>
             </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
-            <item>
+            <item row="1" column="0">
              <widget class="QLabel" name="label_8">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="text">
                <string>Runner2</string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="1" column="1">
              <widget class="QLineEdit" name="RunnerText_2"/>
             </item>
-            <item>
+            <item row="1" column="2">
              <widget class="QPushButton" name="timerStopButton_P2">
               <property name="text">
                <string>Stop</string>
               </property>
              </widget>
             </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_4">
-            <item>
+            <item row="2" column="0">
              <widget class="QLabel" name="label_9">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="text">
                <string>Runner3</string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="2" column="1">
              <widget class="QLineEdit" name="RunnerText_3"/>
             </item>
-            <item>
+            <item row="2" column="2">
              <widget class="QPushButton" name="timerStopButton_P3">
               <property name="text">
                <string>Stop</string>
               </property>
              </widget>
             </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_5">
-            <item>
+            <item row="3" column="0">
              <widget class="QLabel" name="label_10">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="text">
                <string>Runner4</string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="3" column="1">
              <widget class="QLineEdit" name="RunnerText_4"/>
             </item>
-            <item>
+            <item row="3" column="2">
              <widget class="QPushButton" name="timerStopButton_P4">
               <property name="text">
                <string>Stop</string>
               </property>
              </widget>
             </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_20">
-            <item>
+            <item row="4" column="0">
              <widget class="QLabel" name="label_4">
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="text">
                <string>Commentary</string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="4" column="1">
              <widget class="QLineEdit" name="CommentaryText"/>
             </item>
            </layout>
@@ -383,10 +408,7 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <widget class="QGroupBox" name="groupBox_2">
-         <property name="title">
-          <string/>
-         </property>
+        <widget class="QFrame" name="frame_2">
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_10">
@@ -472,7 +494,7 @@
             <item>
              <widget class="QLabel" name="FormatCategory_2">
               <property name="text">
-               <string>Hardware</string>
+               <string>Platform</string>
               </property>
              </widget>
             </item>
@@ -512,24 +534,8 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_8">
        <item>
-        <widget class="QGroupBox" name="groupBox_5">
-         <property name="title">
-          <string/>
-         </property>
+        <widget class="QFrame" name="frame_5">
          <layout class="QVBoxLayout" name="verticalLayout_9">
-          <item>
-           <widget class="QLabel" name="label_6">
-            <property name="font">
-             <font/>
-            </property>
-            <property name="text">
-             <string>TextFomtSetting</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
           <item>
            <layout class="QGridLayout" name="gridLayout_7">
             <property name="leftMargin">
@@ -575,7 +581,7 @@
                </size>
               </property>
               <property name="text">
-               <string>FontSetting</string>
+               <string>TextFont</string>
               </property>
              </widget>
             </item>
@@ -588,7 +594,7 @@
                </size>
               </property>
               <property name="text">
-               <string>ColorSetting</string>
+               <string>TextColor</string>
               </property>
              </widget>
             </item>
@@ -635,11 +641,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="outlineSize">
-              <property name="maximum">
-               <number>20</number>
-              </property>
-             </widget>
+             <widget class="QSpinBox" name="outlineSize"/>
             </item>
             <item>
              <widget class="QPushButton" name="outlineColorButton">
@@ -671,6 +673,45 @@
             </item>
             <item>
              <widget class="QDoubleSpinBox" name="posY_text"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="showRunner1IconCheckBox">
+              <property name="text">
+               <string>Runner1_Icon</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QCheckBox" name="showRunner2IconCheckBox">
+              <property name="text">
+               <string>Runner2_Icon</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2" colspan="2">
+             <widget class="QCheckBox" name="showRunner3IconCheckBox">
+              <property name="text">
+               <string>Runner3_Icon</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="showRunner4IconCheckBox">
+              <property name="text">
+               <string>Runner4_Icon</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1" colspan="2">
+             <widget class="QCheckBox" name="showCommentaryIconCheckBox">
+              <property name="text">
+               <string>Commentary_Icon</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -716,13 +757,10 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_4">
-     <property name="title">
-      <string/>
-     </property>
+    <widget class="QFrame" name="frame_4">
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="ScreenShotBtn">
         <property name="text">
          <string>ScreenShot</string>
         </property>
@@ -743,14 +781,14 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox">
+         <widget class="QCheckBox" name="TimerStartScreenShotCheck">
           <property name="text">
            <string>TimerStart</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_2">
+         <widget class="QCheckBox" name="TimerStopScreenShotCheck">
           <property name="text">
            <string>TimerStop</string>
           </property>
