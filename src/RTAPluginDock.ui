@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>375</width>
-    <height>626</height>
+    <width>398</width>
+    <height>525</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,18 +15,18 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="QTabWidget" name="tabWidget">
-     <property name="currentIndex">
-      <number>0</number>
-     </property>
-     <widget class="QWidget" name="tab">
-      <attribute name="title">
-       <string>main</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
-        <widget class="QFrame" name="frame_3">
-         <layout class="QVBoxLayout" name="verticalLayout_6">
+    <widget class="QFrame" name="frame_4">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tab">
+         <attribute name="title">
+          <string>main</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
@@ -98,15 +98,21 @@
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
              <widget class="QPushButton" name="timerStartButton">
+              <property name="locale">
+               <locale language="English" country="UnitedStates"/>
+              </property>
               <property name="text">
-               <string>Start</string>
+               <string notr="true">Start</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="timerStopButton">
+              <property name="locale">
+               <locale language="English" country="UnitedStates"/>
+              </property>
               <property name="text">
-               <string>Stop</string>
+               <string notr="true">Stop</string>
               </property>
              </widget>
             </item>
@@ -115,19 +121,26 @@
               <property name="font">
                <font>
                 <bold>false</bold>
+                <kerning>true</kerning>
                </font>
               </property>
               <property name="text">
-               <string>Reset</string>
+               <string notr="true">Reset</string>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_16">
-            <item>
+           <layout class="QGridLayout" name="gridLayout_6">
+            <item row="0" column="0">
              <widget class="QRadioButton" name="TimerOnlyBtn">
+              <property name="layoutDirection">
+               <enum>Qt::LayoutDirection::LeftToRight</enum>
+              </property>
+              <property name="autoFillBackground">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>TimerOnly</string>
               </property>
@@ -136,47 +149,60 @@
               </property>
              </widget>
             </item>
-            <item>
+            <item row="0" column="1">
              <widget class="QRadioButton" name="CowntDownOnlyBtn">
               <property name="enabled">
                <bool>true</bool>
+              </property>
+              <property name="layoutDirection">
+               <enum>Qt::LayoutDirection::LeftToRight</enum>
+              </property>
+              <property name="autoFillBackground">
+               <bool>false</bool>
               </property>
               <property name="text">
                <string>CountDownOnly</string>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="0" column="2">
              <widget class="QRadioButton" name="BothBtn">
               <property name="enabled">
                <bool>true</bool>
+              </property>
+              <property name="layoutDirection">
+               <enum>Qt::LayoutDirection::LeftToRight</enum>
+              </property>
+              <property name="autoFillBackground">
+               <bool>false</bool>
               </property>
               <property name="text">
                <string>Both</string>
               </property>
              </widget>
             </item>
+            <item row="0" column="3">
+             <widget class="QRadioButton" name="TimerNoneButton">
+              <property name="layoutDirection">
+               <enum>Qt::LayoutDirection::LeftToRight</enum>
+              </property>
+              <property name="autoFillBackground">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string notr="true">None</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
           <item>
-           <spacer name="verticalSpacer">
+           <widget class="Line" name="line_2">
             <property name="orientation">
-             <enum>Qt::Orientation::Vertical</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
+           </widget>
           </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QFrame" name="frame">
-         <layout class="QVBoxLayout" name="verticalLayout_7">
           <item>
            <widget class="QComboBox" name="gameSelectBox"/>
           </item>
@@ -368,12 +394,12 @@
                </size>
               </property>
               <property name="text">
-               <string>Commentary</string>
+               <string>Commentator</string>
               </property>
              </widget>
             </item>
             <item row="4" column="1">
-             <widget class="QLineEdit" name="CommentaryText"/>
+             <widget class="QLineEdit" name="CommentatorText"/>
             </item>
            </layout>
           </item>
@@ -385,7 +411,7 @@
            </widget>
           </item>
           <item>
-           <spacer name="verticalSpacer_2">
+           <spacer name="verticalSpacer">
             <property name="orientation">
              <enum>Qt::Orientation::Vertical</enum>
             </property>
@@ -399,23 +425,17 @@
           </item>
          </layout>
         </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tab_2">
-      <attribute name="title">
-       <string>info</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
-       <item>
-        <widget class="QFrame" name="frame_2">
-         <layout class="QVBoxLayout" name="verticalLayout">
+        <widget class="QWidget" name="tab_2">
+         <attribute name="title">
+          <string>schedule</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_10">
             <item>
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Schedule File</string>
+               <string>Schedule Import</string>
               </property>
              </widget>
             </item>
@@ -427,6 +447,107 @@
              </widget>
             </item>
            </layout>
+          </item>
+          <item>
+           <widget class="Line" name="line_4">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="scheduleTable">
+            <attribute name="horizontalHeaderMinimumSectionSize">
+             <number>100</number>
+            </attribute>
+            <column>
+             <property name="text">
+              <string notr="true">GameTitle</string>
+             </property>
+             <property name="whatsThis">
+              <string notr="true"/>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string notr="true">Runner</string>
+             </property>
+             <property name="whatsThis">
+              <string notr="true"/>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string notr="true">Category</string>
+             </property>
+             <property name="whatsThis">
+              <string notr="true"/>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string notr="true">Platform</string>
+             </property>
+             <property name="whatsThis">
+              <string notr="true"/>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string notr="true">Estimate</string>
+             </property>
+             <property name="whatsThis">
+              <string notr="true"/>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string notr="true">Commentary</string>
+             </property>
+             <property name="whatsThis">
+              <string notr="true"/>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item>
+           <layout class="QGridLayout" name="gridLayout_8">
+            <item row="0" column="1">
+             <widget class="QPushButton" name="removeScheduleBtn">
+              <property name="text">
+               <string notr="true">Remove</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="3">
+             <widget class="QPushButton" name="exportScheduleBtn">
+              <property name="text">
+               <string notr="true">Export</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QPushButton" name="updateScheduleBtn">
+              <property name="text">
+               <string notr="true">Update</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QPushButton" name="addScheduleBtn">
+              <property name="text">
+               <string notr="true">Add</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="Line" name="line">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QLabel" name="label_3">
@@ -442,38 +563,7 @@
             <property name="textFormat">
              <enum>Qt::TextFormat::AutoText</enum>
             </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
            </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_11">
-            <item>
-             <widget class="QLabel" name="FormatGameTitle">
-              <property name="text">
-               <string>GameTitle</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="FormatGameTitleBox"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_12">
-            <item>
-             <widget class="QLabel" name="FormatRunnerName">
-              <property name="text">
-               <string>RunnerName</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="FormatRunnerBox"/>
-            </item>
-           </layout>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_13">
@@ -486,6 +576,20 @@
             </item>
             <item>
              <widget class="QComboBox" name="FormatCategoryBox"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_11">
+            <item>
+             <widget class="QLabel" name="FormatGameTitle">
+              <property name="text">
+               <string>GameTitle</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="FormatGameTitleBox"/>
             </item>
            </layout>
           </item>
@@ -504,6 +608,34 @@
            </layout>
           </item>
           <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_12">
+            <item>
+             <widget class="QLabel" name="FormatRunnerName">
+              <property name="text">
+               <string>RunnerName</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="FormatRunnerBox"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QLabel" name="FormatCategory_3">
+              <property name="text">
+               <string>Commentator</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="FormatCommentatorBox"/>
+            </item>
+           </layout>
+          </item>
+          <item>
            <widget class="QPushButton" name="applyButton">
             <property name="text">
              <string>apply</string>
@@ -511,7 +643,7 @@
            </widget>
           </item>
           <item>
-           <spacer name="verticalSpacer_3">
+           <spacer name="verticalSpacer_2">
             <property name="orientation">
              <enum>Qt::Orientation::Vertical</enum>
             </property>
@@ -525,54 +657,110 @@
           </item>
          </layout>
         </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tab_3">
-      <attribute name="title">
-       <string>setting</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_8">
-       <item>
-        <widget class="QFrame" name="frame_5">
-         <layout class="QVBoxLayout" name="verticalLayout_9">
+        <widget class="QWidget" name="tab_3">
+         <attribute name="title">
+          <string>design</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <layout class="QGridLayout" name="gridLayout_7">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <item row="1" column="1">
-             <widget class="QComboBox" name="textSelectBox"/>
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="1" column="0">
+             <widget class="QComboBox" name="layoutSelectBox">
+              <item>
+               <property name="text">
+                <string>main</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>setup</string>
+               </property>
+              </item>
+             </widget>
             </item>
-            <item row="1" column="3">
-             <widget class="QComboBox" name="textAlignBox">
-              <property name="maximumSize">
-               <size>
-                <width>130</width>
-                <height>16777215</height>
-               </size>
+            <item row="2" column="1">
+             <widget class="QPushButton" name="SavePosSettingBtn">
+              <property name="text">
+               <string>SaveLayout</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="2">
+             <widget class="QPushButton" name="LoadPosSettingBtn">
+              <property name="text">
+               <string>LoadLayout</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_6">
+              <property name="font">
+               <font>
+                <pointsize>9</pointsize>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>SceneLayoutSetting</string>
               </property>
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QLabel" name="label_5">
+             <widget class="QCheckBox" name="syncSceneCheckBox">
               <property name="text">
-               <string>TextName</string>
+               <string>SyncSceneChange</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="3">
-             <widget class="QLabel" name="label_16">
+            <item row="1" column="2">
+             <widget class="QPushButton" name="removeLayoutBtn">
               <property name="text">
-               <string>TextAlign</string>
+               <string notr="true">Delete</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QPushButton" name="addLayoutBtn">
+              <property name="text">
+               <string notr="true">Add</string>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
            <layout class="QGridLayout" name="gridLayout_2">
             <item row="0" column="0">
+             <widget class="QCheckBox" name="visibleCheckBox">
+              <property name="toolTip">
+               <string/>
+              </property>
+              <property name="text">
+               <string>TextName</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
              <widget class="QPushButton" name="fontSetting">
               <property name="maximumSize">
                <size>
@@ -585,7 +773,7 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
+            <item row="1" column="1">
              <widget class="QPushButton" name="StyleColorBtn">
               <property name="maximumSize">
                <size>
@@ -598,36 +786,39 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="2">
-             <widget class="QPushButton" name="TimerStopColorChangeBtn">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>130</width>
-                <height>0</height>
-               </size>
-              </property>
+            <item row="1" column="2">
+             <widget class="QComboBox" name="textAlignBox">
               <property name="maximumSize">
                <size>
-                <width>120</width>
+                <width>130</width>
                 <height>16777215</height>
                </size>
               </property>
-              <property name="baseSize">
-               <size>
-                <width>120</width>
-                <height>0</height>
-               </size>
-              </property>
+             </widget>
+            </item>
+            <item row="0" column="1" colspan="2">
+             <widget class="QComboBox" name="textSelectBox"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_19">
+            <item>
+             <widget class="QLabel" name="label_28">
               <property name="text">
-               <string>TimerStopColor</string>
+               <string>TextPosition</string>
               </property>
              </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="posX_text">
+              <property name="maximum">
+               <double>99.989999999999995</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="posY_text"/>
             </item>
            </layout>
           </item>
@@ -656,88 +847,7 @@
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_19">
-            <item>
-             <widget class="QLabel" name="label_28">
-              <property name="text">
-               <string>TextPosition</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QDoubleSpinBox" name="posX_text">
-              <property name="maximum">
-               <double>99.989999999999995</double>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QDoubleSpinBox" name="posY_text"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QGridLayout" name="gridLayout_4">
-            <item row="0" column="0">
-             <widget class="QCheckBox" name="showRunner1IconCheckBox">
-              <property name="text">
-               <string>Runner1_Icon</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QCheckBox" name="showRunner2IconCheckBox">
-              <property name="text">
-               <string>Runner2_Icon</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2" colspan="2">
-             <widget class="QCheckBox" name="showRunner3IconCheckBox">
-              <property name="text">
-               <string>Runner3_Icon</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QCheckBox" name="showRunner4IconCheckBox">
-              <property name="text">
-               <string>Runner4_Icon</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1" colspan="2">
-             <widget class="QCheckBox" name="showCommentaryIconCheckBox">
-              <property name="text">
-               <string>Commentary_Icon</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QGridLayout" name="gridLayout_19">
-            <property name="leftMargin">
-             <number>150</number>
-            </property>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="LoadPosSettingBtn">
-              <property name="text">
-               <string>LoadLayout</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QPushButton" name="SavePosSettingBtn">
-              <property name="text">
-               <string>SaveLayout</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <spacer name="verticalSpacer_4">
+           <spacer name="verticalSpacer_3">
             <property name="orientation">
              <enum>Qt::Orientation::Vertical</enum>
             </property>
@@ -751,50 +861,116 @@
           </item>
          </layout>
         </widget>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-   </item>
-   <item>
-    <widget class="QFrame" name="frame_4">
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+        <widget class="QWidget" name="tab_4">
+         <attribute name="title">
+          <string>global</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="1" column="2" colspan="2">
+             <widget class="QCheckBox" name="showRunner3IconCheckBox">
+              <property name="text">
+               <string>Runner3_Icon</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1" colspan="2">
+             <widget class="QCheckBox" name="showCommentatorIconCheckBox">
+              <property name="text">
+               <string>Commentary_Icon</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="showRunner1IconCheckBox">
+              <property name="text">
+               <string>Runner1_Icon</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QCheckBox" name="showRunner4IconCheckBox">
+              <property name="text">
+               <string>Runner4_Icon</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QCheckBox" name="showRunner2IconCheckBox">
+              <property name="text">
+               <string>Runner2_Icon</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_21">
+            <item>
+             <widget class="QLabel" name="label_7">
+              <property name="font">
+               <font>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>AutoScreenShotFlag</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="TimerStartScreenShotCheck">
+              <property name="text">
+               <string>TimerStart</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="TimerStopScreenShotCheck">
+              <property name="text">
+               <string>TimerStop</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="TimerStopColorChangeBtn">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>TimerStopColor</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>290</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
       <item>
        <widget class="QPushButton" name="ScreenShotBtn">
         <property name="text">
          <string>ScreenShot</string>
         </property>
        </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_21">
-        <item>
-         <widget class="QLabel" name="label_7">
-          <property name="font">
-           <font>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>AutoScreenShotFlag</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="TimerStartScreenShotCheck">
-          <property name="text">
-           <string>TimerStart</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="TimerStopScreenShotCheck">
-          <property name="text">
-           <string>TimerStop</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
       </item>
      </layout>
     </widget>

@@ -17,7 +17,21 @@ struct GameData {
 	QString runnerName;
 	QString category;
 	QString hardware;
+	QString commentator;
 	int estimateTime;
+};
+
+// 各テキスト要素のスタイルと座標をまとめた構造体
+struct ElementData {
+	QPointF pos = QPointF(0.0, 0.0);
+	QFont font = QFont("Arial", 48);
+	QString color = "#FFFFFF";
+	QString align = "center";
+	bool outlineEnabled = false;
+	int outlineSize = 2;
+	QString outlineColor = "#000000";
+
+	bool isVisible = true;
 };
 
 class RTAPluginDock : public QWidget {
@@ -30,13 +44,12 @@ public:
 	// 初期化とシグナル接続
 	void SetupPositionSignals();
 	void SetupStyleSignals();
-	void UpdateObsSourceStyle();
+	void SetupSecheduleSignals();
 
 private slots:
 
 	// UI操作
 	void onUpdateDoneButtonClicked();
-	void onFontChangeButtonClicked();
 
 	// スケジュール管理
 	void loadAndParseJsonFile();
@@ -48,6 +61,7 @@ private slots:
 
 	// オーバーレイ更新のコア
 	void SaveOverlayData();
+	void LoadOverlayData();
 
 private:
 	Ui::RTAPluginDock *ui;
@@ -66,16 +80,13 @@ private:
 	bool autoScreenShotOnStart = false; // 自動スクショのフラグ
 	bool autoScreenShotOnStop = false;  // 自動スクショのフラグ
 
-	std::map<QString, bool> outlineEnabledList;
-	std::map<QString, int> outlineSizeList;
-	std::map<QString, QString> outlineColorList;
+	// [レイアウト名] -> [要素ID] -> [設定データ] の2次元マップ
+	std::map<QString, std::map<QString, ElementData>> layoutData;
+
+	// 現在編集中のレイアウト名 (初期値は "main")
+	QString currentLayoutName = "main";
+
 	QString timerStopColor = "0xFFFF00";
-
-	std::map<QString, QFont> fontList;
-	std::map<QString, QString> colorList;
-	std::map<QString, QString> alignList; // 追加：アライメント情報
-	std::map<QString, QPointF> posList;
-
 	QJsonObject scheduleData;
 	std::vector<GameData> currentGameData;
 };
