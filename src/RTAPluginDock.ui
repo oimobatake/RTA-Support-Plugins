@@ -736,13 +736,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
            <layout class="QGridLayout" name="gridLayout_2">
             <item row="0" column="0">
              <widget class="QCheckBox" name="visibleCheckBox">
@@ -842,6 +835,66 @@
               <property name="text">
                <string>outline color</string>
               </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>TextMaxWidth</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="maxWidthSpinBox">
+              <property name="suffix">
+               <string>px</string>
+              </property>
+              <property name="prefix">
+               <string/>
+              </property>
+              <property name="maximum">
+               <number>4000</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>WrapMode</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="wrapModeBox">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="currentText">
+               <string notr="true">None</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>None</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Shrink</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Wrap</string>
+               </property>
+              </item>
              </widget>
             </item>
            </layout>
@@ -963,6 +1016,13 @@
           </item>
          </layout>
         </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="Line" name="line_5">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
        </widget>
       </item>
       <item>

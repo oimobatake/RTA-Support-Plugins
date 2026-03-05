@@ -32,6 +32,9 @@ struct ElementData {
 	QString outlineColor = "#000000";
 
 	bool isVisible = true;
+
+	int maxWidth = 0;          // 0なら制限なし
+	QString wrapMode = "none"; // "none", "shrink", "wrap" のいずれか
 };
 
 class RTAPluginDock : public QWidget {

@@ -404,6 +404,11 @@ void RTAPluginDock::SetupStyleSignals()
 	ui->textAlignBox->addItem("中央揃え", "center");
 	ui->textAlignBox->addItem("右揃え", "right");
 
+	ui->wrapModeBox->clear();
+	ui->wrapModeBox->addItem("制限なし", "none");
+	ui->wrapModeBox->addItem("自動縮小 (はみ出さない)", "shrink");
+	ui->wrapModeBox->addItem("自動改行 (折り返す)", "wrap");
+
 	// 対象要素またはレイアウトが切り替わった時のUI同期
 	connect(ui->textSelectBox, &QComboBox::currentTextChanged, this, [this](const QString &name) {
 		if (name.isEmpty() || !textElementMap.count(name))
@@ -416,6 +421,8 @@ void RTAPluginDock::SetupStyleSignals()
 		ui->posY_text->blockSignals(true);
 		ui->outlineCheckBox->blockSignals(true);
 		ui->visibleCheckBox->blockSignals(true);
+		ui->maxWidthSpinBox->blockSignals(true);
+		ui->wrapModeBox->blockSignals(true);
 
 		// 値をUIにセット
 		ui->posX_text->setValue(ed.pos.x());
@@ -426,6 +433,10 @@ void RTAPluginDock::SetupStyleSignals()
 		int alignIdx = ui->textAlignBox->findData(ed.align);
 		ui->textAlignBox->setCurrentIndex(alignIdx);
 
+		ui->maxWidthSpinBox->setValue(ed.maxWidth);
+		int wrapIdx = ui->wrapModeBox->findData(ed.wrapMode);
+		if (wrapIdx >= 0) ui->wrapModeBox->setCurrentIndex(wrapIdx);
+
 		// ※outlineSizeなどのスピンボックスがあればここでセット
 		ui->outlineSize->blockSignals(true);
 		ui->outlineSize->setValue(ed.outlineSize);
@@ -435,6 +446,8 @@ void RTAPluginDock::SetupStyleSignals()
 		ui->posY_text->blockSignals(false);
 		ui->outlineCheckBox->blockSignals(false);
 		ui->visibleCheckBox->blockSignals(false);
+		ui->maxWidthSpinBox->blockSignals(false);
+		ui->wrapModeBox->blockSignals(false);
 	});
 
 	// アライメント変更
@@ -531,6 +544,19 @@ void RTAPluginDock::SetupStyleSignals()
 	connect(ui->visibleCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
 		QString id = textElementMap.at(ui->textSelectBox->currentText());
 		layoutData[this->currentLayoutName][id].isVisible = (state == Qt::Checked);
+		this->SaveOverlayData();
+	});
+
+	// 最大幅とモードの変更
+	connect(ui->maxWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int value) {
+		QString id = textElementMap.at(ui->textSelectBox->currentText());
+		layoutData[this->currentLayoutName][id].maxWidth = value;
+		this->SaveOverlayData();
+	});
+
+	connect(ui->wrapModeBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+		QString id = textElementMap.at(ui->textSelectBox->currentText());
+		layoutData[this->currentLayoutName][id].wrapMode = ui->wrapModeBox->itemData(index).toString();
 		this->SaveOverlayData();
 	});
 }
@@ -701,6 +727,8 @@ void RTAPluginDock::SaveOverlayData()
 			s.insert("outlineSize", elData.outlineSize);
 			s.insert("outlineColor", elData.outlineColor);
 			s.insert("isVisible", elData.isVisible);
+			s.insert("maxWidth", elData.maxWidth);
+			s.insert("wrapMode", elData.wrapMode);
 
 			if (id.contains("Timer")) {
 				s.insert("timerState", this->timerState); // 既存コードから維持
@@ -808,6 +836,9 @@ void RTAPluginDock::LoadOverlayData()
 					elData.outlineSize = s["outlineSize"].toInt();
 					elData.outlineColor = s["outlineColor"].toString();
 					elData.isVisible = s.contains("isVisible") ? s["isVisible"].toBool() : true;
+					elData.maxWidth = s.contains("maxWidth") ? s["maxWidth"].toInt() : 0;
+					elData.wrapMode = s.contains("wrapMode") ? s["wrapMode"].toString()
+										 : "none"; // ← 追加
 				}
 				layoutData[layoutName][id] = elData;
 			}
