@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>RTA Support Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: transparent;
+            width: 1920px;
+            height: 1080px;
+        }
+
+        .overlay-item {
+            position: absolute;
+            display: block;
+            width: max-content;
+            white-space: nowrap;
+            line-height: 1.1;
+        }
+
+        /* -------------------------------------
+           アイコン表示用スタイル
+        ------------------------------------- */
+        .icon-runner::before, .icon-Commentator::before {
+            content: "";
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            margin-right: 0.25em;
+            background-color: currentColor;
+            -webkit-mask-size: contain;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            vertical-align: -0.15em;
+        }
+
+        /* コントローラーアイコン（走者用） */
+        .icon-runner::before {
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M11.5 6.027a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m-1.5 1.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1m2.5-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m-1.5 1.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1m-6.5-3h1v1h1v1h-1v1h-1v-1h-1v-1h1z'/%3E%3Cpath d='M3.051 3.26a.5.5 0 0 1 .354-.613l1.932-.518a.5.5 0 0 1 .62.39c.655-.079 1.35-.117 2.043-.117.72 0 1.443.041 2.12.126a.5.5 0 0 1 .622-.399l1.932.518a.5.5 0 0 1 .306.729q.211.136.373.297c.408.408.78 1.05 1.095 1.772.32.733.599 1.591.805 2.466s.34 1.78.364 2.606c.024.816-.059 1.602-.328 2.21a1.42 1.42 0 0 1-1.445.83c-.636-.067-1.115-.394-1.513-.773-.245-.232-.496-.526-.739-.808-.126-.148-.25-.292-.368-.423-.728-.804-1.597-1.527-3.224-1.527s-2.496.723-3.224 1.527c-.119.131-.242.275-.368.423-.243.282-.494.575-.739.808-.398.38-.877.706-1.513.773a1.42 1.42 0 0 1-1.445-.83c-.27-.608-.352-1.395-.329-2.21.024-.826.16-1.73.365-2.606.206-.875.486-1.733.805-2.466.315-.722.687-1.364 1.094-1.772a2.3 2.3 0 0 1 .433-.335l-.028-.079zm2.036.412c-.877.185-1.469.443-1.733.708-.276.276-.587.783-.885 1.465a14 14 0 0 0-.748 2.295 12.4 12.4 0 0 0-.339 2.406c-.022.755.062 1.368.243 1.776a.42.42 0 0 0 .426.24c.327-.034.61-.199.929-.502.212-.202.4-.423.615-.674.133-.156.276-.323.44-.504C4.861 9.969 5.978 9.027 8 9.027s3.139.942 3.965 1.855c.164.181.307.348.44.504.214.251.403.472.615.674.318.303.601.468.929.503a.42.42 0 0 0 .426-.241c.18-.408.265-1.02.243-1.776a12.4 12.4 0 0 0-.339-2.406 14 14 0 0 0-.748-2.295c-.298-.682-.61-1.19-.885-1.465-.264-.265-.856-.523-1.733-.708-.85-.179-1.877-.27-2.913-.27s-2.063.091-2.913.27'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M11.5 6.027a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m-1.5 1.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1m2.5-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m-1.5 1.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1m-6.5-3h1v1h1v1h-1v1h-1v-1h-1v-1h1z'/%3E%3Cpath d='M3.051 3.26a.5.5 0 0 1 .354-.613l1.932-.518a.5.5 0 0 1 .62.39c.655-.079 1.35-.117 2.043-.117.72 0 1.443.041 2.12.126a.5.5 0 0 1 .622-.399l1.932.518a.5.5 0 0 1 .306.729q.211.136.373.297c.408.408.78 1.05 1.095 1.772.32.733.599 1.591.805 2.466s.34 1.78.364 2.606c.024.816-.059 1.602-.328 2.21a1.42 1.42 0 0 1-1.445.83c-.636-.067-1.115-.394-1.513-.773-.245-.232-.496-.526-.739-.808-.126-.148-.25-.292-.368-.423-.728-.804-1.597-1.527-3.224-1.527s-2.496.723-3.224 1.527c-.119.131-.242.275-.368.423-.243.282-.494.575-.739.808-.398.38-.877.706-1.513.773a1.42 1.42 0 0 1-1.445-.83c-.27-.608-.352-1.395-.329-2.21.024-.826.16-1.73.365-2.606.206-.875.486-1.733.805-2.466.315-.722.687-1.364 1.094-1.772a2.3 2.3 0 0 1 .433-.335l-.028-.079zm2.036.412c-.877.185-1.469.443-1.733.708-.276.276-.587.783-.885 1.465a14 14 0 0 0-.748 2.295 12.4 12.4 0 0 0-.339 2.406c-.022.755.062 1.368.243 1.776a.42.42 0 0 0 .426.24c.327-.034.61-.199.929-.502.212-.202.4-.423.615-.674.133-.156.276-.323.44-.504C4.861 9.969 5.978 9.027 8 9.027s3.139.942 3.965 1.855c.164.181.307.348.44.504.214.251.403.472.615.674.318.303.601.468.929.503a.42.42 0 0 0 .426-.241c.18-.408.265-1.02.243-1.776a12.4 12.4 0 0 0-.339-2.406 14 14 0 0 0-.748-2.295c-.298-.682-.61-1.19-.885-1.465-.264-.265-.856-.523-1.733-.708-.85-.179-1.877-.27-2.913-.27s-2.063.091-2.913.27'/%3E%3C/svg%3E");
+        }
+
+        /* マイクアイコン（解説者用） */
+        .icon-Commentator::before {
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body>
+    <!-- 文字の長さを測るための透明なルーラー（定規） -->
+    <div id="text-ruler" style="position: absolute; visibility: hidden; white-space: nowrap; width: max-content; pointer-events: none; z-index: -9999;"></div>
+
+    <!-- 要素一覧 -->
+    <div id="GameTitle" class="overlay-item"></div>
+    <div id="Category" class="overlay-item"></div>
+    <div id="Hardware" class="overlay-item"></div>
+    <div id="EstimateTime" class="overlay-item"></div>
+    <div id="CountUpTimer" class="overlay-item"></div>
+    <div id="CountDownTimer" class="overlay-item"></div>
+    <div id="RunnerName_1" class="overlay-item"></div>
+    <div id="RunnerName_2" class="overlay-item"></div>
+    <div id="RunnerName_3" class="overlay-item"></div>
+    <div id="RunnerName_4" class="overlay-item"></div>
+    <div id="RunnerTimer_1" class="overlay-item"></div>
+    <div id="RunnerTimer_2" class="overlay-item"></div>
+    <div id="RunnerTimer_3" class="overlay-item"></div>
+    <div id="RunnerTimer_4" class="overlay-item"></div>
+    <div id="Commentator" class="overlay-item"></div>
+
+    <!-- 次のゲーム表示用 -->
+    <div id="NextGameTitle_1" class="overlay-item"></div>
+    <div id="NextRunnerName_1" class="overlay-item"></div>
+    <div id="NextCategory_1" class="overlay-item"></div>
+    <div id="NextHardware_1" class="overlay-item"></div>
+    <div id="NextEstimate_1" class="overlay-item"></div>
+
+    <div id="NextGameTitle_2" class="overlay-item"></div>
+    <div id="NextRunnerName_2" class="overlay-item"></div>
+    <div id="NextCategory_2" class="overlay-item"></div>
+    <div id="NextHardware_2" class="overlay-item"></div>
+    <div id="NextEstimate_2" class="overlay-item"></div>
+
+    <div id="NextGameTitle_3" class="overlay-item"></div>
+    <div id="NextRunnerName_3" class="overlay-item"></div>
+    <div id="NextCategory_3" class="overlay-item"></div>
+    <div id="NextHardware_3" class="overlay-item"></div>
+    <div id="NextEstimate_3" class="overlay-item"></div>
+
+    <script>
+        // 100ミリ秒ごとにオーバーレイを更新
+        setInterval(updateOverlay, 100);
+
+        async function updateOverlay() {
+            try {
+                let currentLayout = 'main';
+                const cssLayout = getComputedStyle(document.body).getPropertyValue('--rta-layout');
+                if (cssLayout) {
+                    currentLayout = cssLayout.replace(/["']/g, '').trim();
+                }
+
+                const response = await fetch('overlay_data.json?t=' + Date.now());
+                if (!response.ok) return;
+                const data = await response.json();
+
+                // ルーラー要素の取得
+                const ruler = document.getElementById('text-ruler');
+
+                // ==========================================
+                // 1. テキスト更新（全レイアウト共通）
+                // ==========================================
+                if (data.values) {
+                    const showIcons = data.settings || {};
+
+                    for (const id in data.values) {
+                        const el = document.getElementById(id);
+                        if (!el) continue;
+
+                        const textValue = data.values[id];
+
+                        // HTMLタグの注入と再描画バグの防止
+                        if (el.dataset.rawText !== textValue) {
+                            el.innerHTML = textValue;
+                            el.dataset.rawText = textValue;
+                        }
+
+                        // アイコンのON/OFF判定
+                        const hasText = textValue.trim() !== "";
+                        let iconEnabled = false;
+
+                        if (id === "RunnerName_1" && showIcons.showIcon_1) iconEnabled = true;
+                        if (id === "RunnerName_2" && showIcons.showIcon_2) iconEnabled = true;
+                        if (id === "RunnerName_3" && showIcons.showIcon_3) iconEnabled = true;
+                        if (id === "RunnerName_4" && showIcons.showIcon_4) iconEnabled = true;
+                        if (id === "Commentator" && showIcons.showIcon_5) iconEnabled = true;
+
+                        if (iconEnabled && hasText) {
+                            if (id.startsWith("RunnerName")) {
+                                el.classList.add("icon-runner");
+                            } else if (id === "Commentator") {
+                                el.classList.add("icon-Commentator");
+                            }
+                        } else {
+                            el.classList.remove("icon-runner", "icon-Commentator");
+                        }
+                    }
+                }
+
+                // ==========================================
+                // 2. スタイルと座標の更新（現在のレイアウト専用）
+                // ==========================================
+                if (data.layouts && data.layouts[currentLayout]) {
+                    const layoutData = data.layouts[currentLayout];
+
+                    for (const id in layoutData.styles) {
+                        const el = document.getElementById(id);
+                        const s = layoutData.styles[id];
+                        if (!el || !s) continue;
+
+                        // 非表示なら以下の処理をスキップ
+                        if (s.isVisible === false) {
+                            el.style.display = 'none';
+                            continue;
+                        } else {
+                            el.style.display = 'block';
+                        }
+
+                        // タイマー停止時の色変更
+                        if (id.includes("Timer") && s.timerState !== undefined) {
+                            el.style.color = s.timerState !== "Stopped" ? s.color : layoutData.stopColor;
+                        } else {
+                            el.style.color = s.color;
+                        }
+
+                        // ==============================================
+                        // 画面外ルーラーを使って「素の文字幅」を正確に測る
+                        // ==============================================
+                        ruler.style.fontFamily = s.fontFamily;
+                        ruler.style.fontSize = s.fontSize + 'px';
+                        ruler.style.fontWeight = s.isBold ? 'bold' : 'normal';
+                        ruler.style.fontStyle = s.isItalic ? 'italic' : 'normal';
+                        ruler.innerHTML = el.innerHTML; // アイコン等のHTMLも含めて測る
+
+                        // 定規で正確なピクセル幅を取得
+                        const actualWidth = ruler.getBoundingClientRect().width;
+
+                        // 最終的に適用するフォントサイズのベース
+                        let currentFontSize = s.fontSize;
+
+                        // C++から空文字や日本語が飛んできた場合のフェイルセーフ
+                        let mode = s.wrapMode || '';
+                        if (mode.includes('wrap') || mode.includes('改行') || mode.includes('折')) {
+                            mode = 'wrap';
+                        } else if (mode.includes('shrink') || mode.includes('縮小') || mode === '') {
+                            mode = 'shrink'; // 空や無効な値は、一番安全な「縮小」として扱う
+                        } else {
+                            mode = 'none';
+                        }
+
+                        // ==============================================
+                        // 幅の制御（Shrink / Wrap）の適用
+                        // ==============================================
+                        if (s.maxWidth > 0) {
+                            if (mode === 'wrap') {
+                                // 自動改行
+                                el.style.whiteSpace = 'pre-wrap';
+                                el.style.wordBreak = 'break-word'; // 強制折り返し
+                                el.style.overflowWrap = 'anywhere';
+                                el.style.width = s.maxWidth + 'px'; // 枠の幅を固定
+
+                            } else if (mode === 'shrink') {
+                                // 自動縮小
+                                el.style.whiteSpace = 'nowrap';
+                                el.style.width = 'max-content'; // 幅は文字に合わせる
+
+                                if (actualWidth > s.maxWidth) {
+                                    // ルーラーで測った幅がオーバーしていたら、フォントサイズを計算して小さくする
+                                    const scaleRatio = s.maxWidth / actualWidth;
+                                    currentFontSize = Math.max(1, Math.floor(s.fontSize * scaleRatio));
+                                }
+                            } else {
+                                // 制限なし
+                                el.style.whiteSpace = 'nowrap';
+                                el.style.width = 'max-content';
+                            }
+                        } else {
+                            // 制限なし
+                            el.style.whiteSpace = 'nowrap';
+                            el.style.width = 'max-content';
+                        }
+
+                        // 最終的な文字スタイルの適用
+                        el.style.fontFamily = s.fontFamily;
+                        el.style.fontSize = currentFontSize + 'px';
+                        el.style.fontWeight = s.isBold ? 'bold' : 'normal';
+                        el.style.fontStyle = s.isItalic ? 'italic' : 'normal';
+
+                        // JS側でも念の為行間を指定して確実に適用させる
+                        el.style.lineHeight = '1.1';
+
+                        // アライメントの計算と適用
+                        let transformStr = '';
+                        el.style.textAlign = s.textAlign;
+                        if (s.textAlign === 'center') {
+                            transformStr = 'translateX(-50%)';
+                        } else if (s.textAlign === 'right') {
+                            transformStr = 'translateX(-100%)';
+                        }
+                        el.style.transform = transformStr || 'none';
+
+                        // アウトライン（縁取り）
+                        if (s.outlineEnabled) {
+                            el.style.webkitTextStroke = `${s.outlineSize}px ${s.outlineColor}`;
+                            el.style.paintOrder = "stroke fill";
+                        } else {
+                            el.style.webkitTextStroke = "";
+                            el.style.paintOrder = "";
+                        }
+                    }
+
+                    // --- 座標の適用 ---
+                    for (const id in layoutData.styles) {
+                        const el = document.getElementById(id);
+                        const x = layoutData.transforms["posX_" + id];
+                        const y = layoutData.transforms["posY_" + id];
+                        if (el && x !== undefined && y !== undefined) {
+                            el.style.left = x + 'px';
+                            el.style.top = y + 'px';
+                        }
+                    }
+                } else {
+                    const items = document.querySelectorAll('.overlay-item');
+                    items.forEach(item => item.style.display = 'none');
+                }
+            } catch (e) {
+                // 読み込み競合エラー等はスキップ
+            }
+        }
+    </script>
+</body>
+</html>
