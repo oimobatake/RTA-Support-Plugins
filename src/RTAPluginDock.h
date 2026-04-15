@@ -12,6 +12,7 @@ namespace Ui {
 class RTAPluginDock;
 }
 
+// スケジュール一件分のデータ構造
 struct GameData {
 	QString gameTitle;
 	QString runnerName;
@@ -34,7 +35,7 @@ struct ElementData {
 	bool isVisible = true;
 
 	int maxWidth = 0;          // 0なら制限なし
-	QString wrapMode = "none"; // "none", "shrink", "wrap" のいずれか
+	QString wrapMode = "none"; // "none", "shrink", "wrap"
 };
 
 class RTAPluginDock : public QWidget {
@@ -44,21 +45,11 @@ public:
 	explicit RTAPluginDock(QWidget *parent = nullptr);
 	~RTAPluginDock();
 
-	// 初期化とシグナル接続
-	void SetupPositionSignals();
-	void SetupStyleSignals();
-	void SetupSecheduleSignals();
-
 private slots:
-
-	// UI操作
+	// UI操作・イベント
 	void onUpdateDoneButtonClicked();
-
-	// スケジュール管理
 	void loadAndParseJsonFile();
 	void onApplyScheduleClicked();
-
-	// 配置情報の保存
 	void onSavePosSettingClicked();
 	void onLoadPosSettingClicked();
 
@@ -67,29 +58,32 @@ private slots:
 	void LoadOverlayData();
 
 private:
+	// --- タブ別初期化関数 (リファクタリング) ---
+	void InitMainTab();     // メイン進行タブ
+	void InitScheduleTab(); // スケジュール管理タブ
+	void InitDesignTab();   // デザイン・レイアウト編集タブ
+	void InitGlobalTab();   // グローバル設定タブ
+	void InitCommon();      // 共通・初期化処理
+
 	Ui::RTAPluginDock *ui;
-	QTimer *timer;
+	QTimer *timer;          // メインタイマー
+	QTimer *posUpdateTimer; // 座標更新の負荷軽減用
 
 	// 内部データ保持用
-	QString runnerTimers[4]; // 走者1〜4のストップしたタイマー時間
-	QString timerState = "Reset"; // タイマーの状態（例: "Running", "Stopped"）
-
+	QString runnerTimers[4];
+	QString timerState = "Reset";
 	QFont currentFont;
 	QTime initCountDownTimer;
-	QTimer* posUpdateTimer;
 
-	bool showIcons[5] = {false,false,false,false,false}; // アイコン表示のフラグ（5要素に拡張）
-
-	bool autoScreenShotOnStart = false; // 自動スクショのフラグ
-	bool autoScreenShotOnStop = false;  // 自動スクショのフラグ
+	bool showIcons[5] = {false, false, false, false, false};
+	bool autoScreenShotOnStart = false;
+	bool autoScreenShotOnStop = false;
 
 	// [レイアウト名] -> [要素ID] -> [設定データ] の2次元マップ
 	std::map<QString, std::map<QString, ElementData>> layoutData;
 
-	// 現在編集中のレイアウト名 (初期値は "main")
 	QString currentLayoutName = "main";
-
-	QString timerStopColor = "0xFFFF00";
+	QString timerStopColor = "#FFFF00";
 	QJsonObject scheduleData;
 	std::vector<GameData> currentGameData;
 };

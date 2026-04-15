@@ -41,7 +41,7 @@ static const std::map<QString, QString> textElementMap =
 	{"走者名2", "RunnerName_2"},
 	{"走者名3", "RunnerName_3"},
 	{"走者名4", "RunnerName_4"},
-	{"解説コメント", "Commentator"},
+	{"解説者", "Commentator"},
 
 	{"次ゲーム1: タイトル", "NextGameTitle_1"},
 	{"次ゲーム1: 走者", "NextRunnerName_1"},
@@ -80,22 +80,53 @@ RTAPluginDock::RTAPluginDock(QWidget *parent)
 	: QWidget(parent),
 	  ui(new Ui::RTAPluginDock),
 	  timer(nullptr),
-	  posUpdateTimer(nullptr) // 必ずnullptrで初期化してクラッシュを防ぐ
+	  posUpdateTimer(nullptr)
 {
 	ui->setupUi(this);
 
-	// タイマー初期化
-	timer = new QTimer(this);
-	ui->timerStopButton->setEnabled(false);
-	ui->TimerOnlyBtn->setChecked(true);
+	// 非同期更新用タイマー
+	posUpdateTimer = new QTimer(this);
+	posUpdateTimer->setSingleShot(true);
+	posUpdateTimer->setInterval(100);
 
-	// デフォルトフォント
+	// タブ別初期化の実行
+	InitCommon();
+	InitMainTab();
+	InitScheduleTab();
+	InitDesignTab();
+	InitGlobalTab();
+
+	// 永続化データのロード
+	LoadOverlayData();
+
+	// 初回UI同期
+	emit ui->textSelectBox->currentTextChanged(ui->textSelectBox->currentText());
+}
+
+RTAPluginDock::~RTAPluginDock()
+{
+	delete ui;
+}
+
+void RTAPluginDock::InitCommon()
+{
+	timer = new QTimer(this);
 	currentFont = QFont("Arial", 48);
 
-	// Doneボタン: 現在のUI入力を確定させ、JSONに保存
-	connect(ui->textDone, &QPushButton::clicked, this, &RTAPluginDock::onUpdateDoneButtonClicked);
+	// 共通ボタン（タブ外）
+	connect(ui->ScreenShotBtn, &QPushButton::clicked, this, []() { obs_frontend_take_screenshot(); });
+}
 
-	// タイマー定期実行 (1秒ごと)
+void RTAPluginDock::InitMainTab()
+{
+	ui->timerStopButton->setEnabled(false);
+	ui->TimerOnlyBtn->setChecked(true);
+	ui->CountUpTimer->setTime(QTime(0, 0, 0));
+
+	// 次へボタンにアイコン設定
+	//ui->nextGameBtn->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
+
+	// タイマー定期実行
 	connect(timer, &QTimer::timeout, this, [this]() {
 		if (ui->CowntDownOnlyBtn->isChecked() || ui->BothBtn->isChecked()) {
 			QTime t = ui->CountDonwTimer->time();
@@ -105,133 +136,94 @@ RTAPluginDock::RTAPluginDock(QWidget *parent)
 		if (ui->TimerOnlyBtn->isChecked() || ui->BothBtn->isChecked()) {
 			ui->CountUpTimer->setTime(ui->CountUpTimer->time().addSecs(1));
 		}
-		// 更新のたびにJSONファイルを保存（CSS書き換えはしないためチカチカしない）
 		this->SaveOverlayData();
 	});
 
-	// タイマーオンリー：カウントアップを表示・有効化、カウントダウンを非表示・無効化
-	connect(ui->TimerOnlyBtn, &QRadioButton::clicked, this, [this]() {
-		// 表示の切り替え
-		//ui->CountUpTimer->setEnabled(true);
-		//ui->CountDonwTimer->setEnabled(false);
-
-		// 有効状態の切り替え
-		ui->CountUpTimer->setEnabled(true);
-		ui->CountDonwTimer->setEnabled(false);
-
-		// 他のボタンの状態（念のため）
-		ui->CowntDownOnlyBtn->setChecked(false);
-		ui->BothBtn->setChecked(false);
-
-		// ブラウザオーバーレイに反映（JSON出力を利用している場合）
+	// 表示モード切替
+	auto onModeChanged = [this]() {
+		ui->CountUpTimer->setEnabled(ui->TimerOnlyBtn->isChecked() || ui->BothBtn->isChecked());
+		ui->CountDonwTimer->setEnabled(ui->CowntDownOnlyBtn->isChecked() || ui->BothBtn->isChecked());
 		this->SaveOverlayData();
-	});
+	};
+	connect(ui->TimerOnlyBtn, &QRadioButton::clicked, this, onModeChanged);
+	connect(ui->CowntDownOnlyBtn, &QRadioButton::clicked, this, onModeChanged);
+	connect(ui->BothBtn, &QRadioButton::clicked, this, onModeChanged);
+	connect(ui->TimerNoneButton, &QRadioButton::clicked, this, onModeChanged);
 
-	// カウントダウンオンリー：カウントアップを非表示・無効化、カウントダウンを表示・有効化
-	connect(ui->CowntDownOnlyBtn, &QRadioButton::clicked, this, [this]() {
-		// 表示の切り替え
-		//ui->CountUpTimer->setEnabled(false);
-		//ui->CountDonwTimer->setEnabled(true);
-
-		// 有効状態の切り替え
-		ui->CountUpTimer->setEnabled(false);
-		ui->CountDonwTimer->setEnabled(true);
-
-		// 他のボタンの状態
-		ui->TimerOnlyBtn->setChecked(false);
-		ui->BothBtn->setChecked(false);
-
-		this->SaveOverlayData();
-	});
-
-	// 両方：両方を表示・有効化
-	connect(ui->BothBtn, &QRadioButton::clicked, this, [this]() {
-
-		// 両方を有効化
-		ui->CountUpTimer->setEnabled(true);
-		ui->CountDonwTimer->setEnabled(true);
-
-		// 他のボタンの状態
-		ui->TimerOnlyBtn->setChecked(false);
-		ui->CowntDownOnlyBtn->setChecked(false);
-
-		this->SaveOverlayData();
-	});
-
-	// タイマーを使わない(None)：両方を非表示・無効化
-	connect(ui->TimerNoneButton, &QRadioButton::clicked, this, [this]() {
-		// 両方を非表示・無効化
-		ui->CountUpTimer->setEnabled(false);
-		ui->CountDonwTimer->setEnabled(false);
-		// 他のボタンの状態
-		ui->TimerOnlyBtn->setChecked(false);
-		ui->CowntDownOnlyBtn->setChecked(false);
-		ui->BothBtn->setChecked(false);
-		this->SaveOverlayData();
-	});
-
-
-	// タイマー Start
+	// タイマー制御
 	connect(ui->timerStartButton, &QPushButton::clicked, this, [this]() {
 		timer->start(1000);
 		ui->timerStartButton->setEnabled(false);
 		ui->timerStopButton->setEnabled(true);
 		ui->timeResetButton->setEnabled(false);
 		ui->textDone->setEnabled(false);
-		this->timerState = "Running"; // タイマー状態を更新
+		ui->nextGameBtn->setEnabled(false);
+		ui->prevGameBtn->setEnabled(false);
+		this->timerState = "Running";
 		this->SaveOverlayData();
-
-		if (this->autoScreenShotOnStart) {
+		if (this->autoScreenShotOnStart)
 			obs_frontend_take_screenshot();
-		}
 	});
 
-	// タイマー Stop
 	connect(ui->timerStopButton, &QPushButton::clicked, this, [this]() {
 		timer->stop();
 		ui->timerStartButton->setEnabled(true);
 		ui->timeResetButton->setEnabled(true);
-		this->timerState = "Stopped"; // タイマー状態を更新
+		this->timerState = "Stopped";
 		this->SaveOverlayData();
-
-		if (this->autoScreenShotOnStop) {
+		if (this->autoScreenShotOnStop)
 			obs_frontend_take_screenshot();
-		}
 	});
 
-	// タイマー Reset
 	connect(ui->timeResetButton, &QPushButton::clicked, this, [this]() {
 		ui->CountUpTimer->setTime(QTime(0, 0, 0));
 		ui->CountDonwTimer->setTime(this->initCountDownTimer);
 		ui->timerStopButton->setEnabled(false);
 		ui->timerStartButton->setEnabled(true);
 		ui->textDone->setEnabled(true);
-		this->timerState = "Reset"; // タイマー状態を更新
-		
-		// 各走者のタイマーをクリア
-		for (int i = 0; i < 4; i++) {
+		ui->nextGameBtn->setEnabled(true);
+		ui->prevGameBtn->setEnabled(true);
+		this->timerState = "Reset";
+		for (int i = 0; i < 4; i++)
 			this->runnerTimers[i] = "";
-		}
-
 		this->SaveOverlayData();
 	});
 
-	// スケジュールJSONファイル選択
-	connect(ui->scheduleFileSelect, &QPushButton::clicked, this, &RTAPluginDock::loadAndParseJsonFile);
+	// 走者個別ストップ
+	connect(ui->timerStopButton_P1, &QPushButton::clicked, this, [this]() {
+		this->runnerTimers[0] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss")
+								      : "";
+		this->SaveOverlayData();
+	});
+	connect(ui->timerStopButton_P2, &QPushButton::clicked, this, [this]() {
+		this->runnerTimers[1] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss")
+								      : "";
+		this->SaveOverlayData();
+	});
+	connect(ui->timerStopButton_P3, &QPushButton::clicked, this, [this]() {
+		this->runnerTimers[2] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss")
+								      : "";
+		this->SaveOverlayData();
+	});
+	connect(ui->timerStopButton_P4, &QPushButton::clicked, this, [this]() {
+		this->runnerTimers[3] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss")
+								      : "";
+		this->SaveOverlayData();
+	});
 
-	// スケジュール適用ボタン
-	connect(ui->applyButton, &QPushButton::clicked, this, &RTAPluginDock::onApplyScheduleClicked);
+	// 設定確定
+	connect(ui->textDone, &QPushButton::clicked, this, &RTAPluginDock::onUpdateDoneButtonClicked);
 
-	// スケジュールリスト選択変更
+	// ゲーム選択プルダウン
 	connect(ui->gameSelectBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
 		for (const auto &data : this->currentGameData) {
 			if (data.gameTitle == text) {
 				ui->GameTitleText->setText(data.gameTitle);
 				QStringList runners = data.runnerName.split(",");
-				ui->RunnerText_1->setText(runners.size() > 0 ? runners[0] : "");
-				ui->RunnerText_2->setText(runners.size() > 1 ? runners[1] : "");
-				ui->RunnerText_3->setText(runners.size() > 2 ? runners[2] : "");
-				ui->RunnerText_4->setText(runners.size() > 3 ? runners[3] : "");
+				ui->RunnerText_1->setText(runners.size() > 0 ? runners[0].trimmed() : "");
+				ui->RunnerText_2->setText(runners.size() > 1 ? runners[1].trimmed() : "");
+				ui->RunnerText_3->setText(runners.size() > 2 ? runners[2].trimmed() : "");
+				ui->RunnerText_4->setText(runners.size() > 3 ? runners[3].trimmed() : "");
 				ui->EstimateTime->setTime(QTime::fromMSecsSinceStartOfDay(data.estimateTime * 1000));
 				ui->CategoryText->setText(data.category);
 				ui->HardwareText->setText(data.hardware);
@@ -241,206 +233,177 @@ RTAPluginDock::RTAPluginDock(QWidget *parent)
 		}
 	});
 
-	// 走者タイマーストップボタン
-	connect(ui->timerStopButton_P1, &QPushButton::clicked, this, [this]() {
-		this->runnerTimers[0] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
-		this->SaveOverlayData(); // 即時反映
-	});
-	connect(ui->timerStopButton_P2, &QPushButton::clicked, this, [this]() {
-		this->runnerTimers[1] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
-		this->SaveOverlayData(); // 即時反映
-	});
-	connect(ui->timerStopButton_P3, &QPushButton::clicked, this, [this]() {
-		this->runnerTimers[2] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
-		this->SaveOverlayData(); // 即時反映
-	});
-	connect(ui->timerStopButton_P4, &QPushButton::clicked, this, [this]() {
-		this->runnerTimers[3] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
-		this->SaveOverlayData(); // 即時反映
-	});
-
-	
-
-	// 配置情報のシグナルを一括で接続
-	SetupPositionSignals();
-
-	// スタイル情報のシグナルを一括で接続
-	SetupStyleSignals();
-
-
-	// スクショボタン
-	connect(ui->ScreenShotBtn, &QPushButton::clicked, this, []() {
-		obs_frontend_take_screenshot();
-	});
-
-	// チェックボックスの状態変化をキャッチしてフラグを更新
-	connect(ui->TimerStartScreenShotCheck, &QCheckBox::checkStateChanged, this, [this](int state) {
-			this->autoScreenShotOnStart = (state == Qt::Checked); 
-	});
-	connect(ui->TimerStopScreenShotCheck, &QCheckBox::checkStateChanged, this, [this](int state) {
-			this->autoScreenShotOnStop = (state == Qt::Checked); 
-	});
-
-	// タイマー開始時にスクショを撮る
-	connect(ui->timerStartButton, &QPushButton::clicked, this, [this]() {
-		if (this->autoScreenShotOnStart) {
-			obs_frontend_take_screenshot();
-		}
-	});
-	// タイマー停止時にスクショを撮る
-	connect(ui->timerStopButton, &QPushButton::clicked, this, [this]() {
-		if (this->autoScreenShotOnStop) {
-			obs_frontend_take_screenshot();
+	// 次ゲーム選択ボタン
+	connect(ui->nextGameBtn, &QToolButton::clicked, this, [this]() {
+		int idx = ui->gameSelectBox->currentIndex();
+		if (idx >= 0 && idx < ui->gameSelectBox->count() - 1) {
+			ui->gameSelectBox->setCurrentIndex(idx + 1);
+			onUpdateDoneButtonClicked();
 		}
 	});
 
-	// レイアウトの切り替え
-	connect(ui->layoutSelectBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
-		if (text.isEmpty() || !layoutData.count(text))
-			return;
-		this->currentLayoutName = text;
-
-		if (ui->syncSceneCheckBox && ui->syncSceneCheckBox->isChecked()) {
-			// OBSから同名のソースを検索
-			obs_source_t *sceneSource = obs_get_source_by_name(text.toUtf8().constData());
-			if (sceneSource) {
-				// 取得したソースが「シーン」であるか確認して切り替え
-				obs_scene_t *scene = obs_scene_from_source(sceneSource);
-				if (scene) {
-					obs_frontend_set_current_scene(sceneSource);
-				}
-				// 取得したソースは必ず解放する（メモリリーク防止）
-				obs_source_release(sceneSource);
-			}
+	// 前ゲーム選択ボタン
+	connect(ui->prevGameBtn, &QToolButton::clicked, this, [this]() {
+		int idx = ui->gameSelectBox->currentIndex();
+		if (idx > 0) {
+			ui->gameSelectBox->setCurrentIndex(idx - 1);
+			onUpdateDoneButtonClicked();
 		}
+	});
+}
 
-		// 選択中のテキスト要素のUI（座標や色など）を現在のレイアウトの数値に更新させる
-		emit ui->textSelectBox->currentTextChanged(ui->textSelectBox->currentText());
+void RTAPluginDock::InitScheduleTab()
+{
+	// テーブル設定
+	ui->scheduleTable->setColumnCount(6);
+	ui->scheduleTable->setHorizontalHeaderLabels(
+		{"GameTitle", "Runner", "Category", "Platform", "Estimate", "Commentator"});
+	ui->scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+	ui->scheduleTable->horizontalHeader()->setDefaultSectionSize(120);
+	ui->scheduleTable->horizontalHeader()->setMinimumSectionSize(80);
+	ui->scheduleTable->horizontalHeader()->setStretchLastSection(true);
+
+	connect(ui->scheduleFileSelect, &QPushButton::clicked, this, &RTAPluginDock::loadAndParseJsonFile);
+	connect(ui->applyButton, &QPushButton::clicked, this, &RTAPluginDock::onApplyScheduleClicked);
+
+	// テーブル編集
+	connect(ui->addScheduleBtn, &QPushButton::clicked, this, [this]() {
+		int row = std::max(0, ui->scheduleTable->currentRow() + 1);
+		ui->scheduleTable->insertRow(row);
+	});
+	connect(ui->removeScheduleBtn, &QPushButton::clicked, this, [this]() {
+		int row = ui->scheduleTable->currentRow();
+		if (row >= 0)
+			ui->scheduleTable->removeRow(row);
+	});
+	connect(ui->updateScheduleBtn, &QPushButton::clicked, this, [this]() {
+		this->currentGameData.clear();
+		ui->gameSelectBox->blockSignals(true);
+		ui->gameSelectBox->clear();
+		for (int i = 0; i < ui->scheduleTable->rowCount(); ++i) {
+			GameData d;
+			d.gameTitle = ui->scheduleTable->item(i, 0) ? ui->scheduleTable->item(i, 0)->text() : "";
+			d.runnerName = ui->scheduleTable->item(i, 1) ? ui->scheduleTable->item(i, 1)->text() : "";
+			d.category = ui->scheduleTable->item(i, 2) ? ui->scheduleTable->item(i, 2)->text() : "";
+			d.hardware = ui->scheduleTable->item(i, 3) ? ui->scheduleTable->item(i, 3)->text() : "";
+			QTime t = QTime::fromString(
+				ui->scheduleTable->item(i, 4) ? ui->scheduleTable->item(i, 4)->text() : "00:00:00",
+				"HH:mm:ss");
+			d.estimateTime = t.isValid() ? (t.hour() * 3600 + t.minute() * 60 + t.second()) : 0;
+			d.commentator = ui->scheduleTable->item(i, 5) ? ui->scheduleTable->item(i, 5)->text() : "";
+			this->currentGameData.push_back(d);
+			ui->gameSelectBox->addItem(d.gameTitle);
+		}
+		ui->gameSelectBox->blockSignals(false);
+		if (ui->gameSelectBox->count() > 0)
+			emit ui->gameSelectBox->currentTextChanged(ui->gameSelectBox->currentText());
 		this->SaveOverlayData();
+		QMessageBox::information(this, "成功", "スケジュールを反映しました。");
 	});
 
-	// レイアウトの追加（現在のレイアウトをコピーして新規作成）
-	connect(ui->addLayoutBtn, &QPushButton::clicked, this, [this]() {
-		bool ok;
-		QString newName = QInputDialog::getText(this, "レイアウト追加", "新しいレイアウト名 (英数字推奨):", QLineEdit::Normal, "", &ok);
-		if (ok && !newName.isEmpty() && !layoutData.count(newName)) {
-			// 現在のレイアウト設定を丸ごとコピー
-			layoutData[newName] = layoutData[this->currentLayoutName];
-			ui->layoutSelectBox->addItem(newName);
-			ui->layoutSelectBox->setCurrentText(newName); // 自動的に切り替わる
-		}
-	});
-
-	// レイアウトの削除
-	connect(ui->removeLayoutBtn, &QPushButton::clicked, this, [this]() {
-		if (layoutData.size() <= 1) {
-			QMessageBox::warning(this, "エラー", "最後のレイアウトは削除できません。");
+	// エクスポート
+	connect(ui->exportScheduleBtn, &QPushButton::clicked, this, [this]() {
+		QString path = QFileDialog::getSaveFileName(this, "スケジュール保存", ".", "JSON (*.json)");
+		if (path.isEmpty())
 			return;
+		QJsonObject root;
+		QJsonObject sch;
+		QJsonArray items;
+		for (const auto &d : this->currentGameData) {
+			QJsonObject item;
+			item.insert("data",
+				    QJsonArray({d.gameTitle, d.runnerName, d.category, d.hardware, d.commentator}));
+			item.insert("length_t", d.estimateTime);
+			items.append(item);
 		}
-		int ret = QMessageBox::question(
-			this, "確認", QString("レイアウト '%1' を削除しますか？").arg(this->currentLayoutName));
-		if (ret == QMessageBox::Yes) {
-			layoutData.erase(this->currentLayoutName);
-			ui->layoutSelectBox->removeItem(ui->layoutSelectBox->currentIndex());
-			// removeItemによりcurrentTextChangedが発火し、自動的に別のレイアウトに切り替わる
+		sch.insert("columns", QJsonArray({"GameTitle", "Runner", "Category", "Platform", "Commentator"}));
+		sch.insert("items", items);
+		root.insert("schedule", sch);
+		QFile f(path);
+		if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+			f.write(QJsonDocument(root).toJson());
+			f.close();
 		}
 	});
-
-	SetupSecheduleSignals();
-
-	// 起動時に配置情報をロードしてUIに反映させる
-	this->LoadOverlayData();
-
-	// ロードした情報に合わせて、UIの座標SpinBox等の表示を更新させる
-	emit ui->textSelectBox->currentTextChanged(ui->textSelectBox->currentText());
 }
 
-RTAPluginDock::~RTAPluginDock()
+void RTAPluginDock::InitDesignTab()
 {
-	// posUpdateTimerは親(this)を持っているので自動削除されますが、明示的なdeleteも安全です
-	delete ui;
-}
-
-void RTAPluginDock::SetupPositionSignals()
-{
-	// 2. 編集用SpinBoxの設定
-	ui->posX_text->setRange(-10000.0, 10000.0);
-	ui->posY_text->setRange(-10000.0, 10000.0);
-	ui->posX_text->setDecimals(2);
-	ui->posY_text->setDecimals(2);
-
-	// 3. 編集用SpinBoxの値が変わった時、現在のレイアウトのデータを更新して保存する
-	auto onPosEdited = [this](double) {
-		QString displayName = ui->textSelectBox->currentText();
-		if (textElementMap.count(displayName)) {
-			QString id = textElementMap.at(displayName);
-			layoutData[this->currentLayoutName][id].pos =
-				QPointF(ui->posX_text->value(), ui->posY_text->value());
-
-			if (posUpdateTimer)
-				posUpdateTimer->start();
-			this->SaveOverlayData();
-		}
-	};
-	connect(ui->posX_text, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, onPosEdited);
-	connect(ui->posY_text, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, onPosEdited);
-
-	// 配置情報の保存
-	connect(ui->SavePosSettingBtn, &QPushButton::clicked, this, &RTAPluginDock::onSavePosSettingClicked);
-	// 配置情報の読み込み
-	connect(ui->LoadPosSettingBtn, &QPushButton::clicked, this, &RTAPluginDock::onLoadPosSettingClicked);
-}
-
-void RTAPluginDock::SetupStyleSignals()
-{
-	// 対象選択ComboBoxの初期化
+	// ComboBox初期化
 	ui->textSelectBox->clear();
 	for (auto const &[name, id] : textElementMap)
 		ui->textSelectBox->addItem(name);
-
-	// アライメント選択ComboBoxの初期化
 	ui->textAlignBox->clear();
 	ui->textAlignBox->addItem("左揃え", "left");
 	ui->textAlignBox->addItem("中央揃え", "center");
 	ui->textAlignBox->addItem("右揃え", "right");
-
 	ui->wrapModeBox->clear();
 	ui->wrapModeBox->addItem("制限なし", "none");
-	ui->wrapModeBox->addItem("自動縮小 (はみ出さない)", "shrink");
-	ui->wrapModeBox->addItem("自動改行 (折り返す)", "wrap");
+	ui->wrapModeBox->addItem("自動縮小", "shrink");
+	ui->wrapModeBox->addItem("自動改行", "wrap");
 
-	// 対象要素またはレイアウトが切り替わった時のUI同期
+	ui->posX_text->setRange(-10000, 10000);
+	ui->posY_text->setRange(-10000, 10000);
+
+	// シーン管理
+	connect(ui->layoutSelectBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
+		if (text.isEmpty() || !layoutData.count(text))
+			return;
+		this->currentLayoutName = text;
+		if (ui->syncSceneCheckBox && ui->syncSceneCheckBox->isChecked()) {
+			obs_source_t *src = obs_get_source_by_name(text.toUtf8().constData());
+			if (src) {
+				if (obs_scene_from_source(src))
+					obs_frontend_set_current_scene(src);
+				obs_source_release(src);
+			}
+		}
+		emit ui->textSelectBox->currentTextChanged(ui->textSelectBox->currentText());
+		this->SaveOverlayData();
+	});
+
+	connect(ui->addLayoutBtn, &QPushButton::clicked, this, [this]() {
+		bool ok;
+		QString name = QInputDialog::getText(this, "追加", "シーン名:", QLineEdit::Normal, "", &ok);
+		if (ok && !name.isEmpty() && !layoutData.count(name)) {
+			layoutData[name] = layoutData[this->currentLayoutName];
+			ui->layoutSelectBox->addItem(name);
+			ui->layoutSelectBox->setCurrentText(name);
+		}
+	});
+
+	connect(ui->removeLayoutBtn, &QPushButton::clicked, this, [this]() {
+		if (layoutData.size() <= 1)
+			return;
+		if (QMessageBox::Yes == QMessageBox::question(this, "削除", "このレイアウトを削除しますか？")) {
+			layoutData.erase(this->currentLayoutName);
+			ui->layoutSelectBox->removeItem(ui->layoutSelectBox->currentIndex());
+		}
+	});
+
+	// UI同期
 	connect(ui->textSelectBox, &QComboBox::currentTextChanged, this, [this](const QString &name) {
 		if (name.isEmpty() || !textElementMap.count(name))
 			return;
 		QString id = textElementMap.at(name);
 		ElementData &ed = layoutData[this->currentLayoutName][id];
 
-		// シグナルのループを防ぐため一時的にブロック
 		ui->posX_text->blockSignals(true);
 		ui->posY_text->blockSignals(true);
 		ui->outlineCheckBox->blockSignals(true);
 		ui->visibleCheckBox->blockSignals(true);
 		ui->maxWidthSpinBox->blockSignals(true);
 		ui->wrapModeBox->blockSignals(true);
+		ui->outlineSize->blockSignals(true);
 
-		// 値をUIにセット
 		ui->posX_text->setValue(ed.pos.x());
 		ui->posY_text->setValue(ed.pos.y());
 		ui->outlineCheckBox->setChecked(ed.outlineEnabled);
 		ui->visibleCheckBox->setChecked(ed.isVisible);
-
-		int alignIdx = ui->textAlignBox->findData(ed.align);
-		ui->textAlignBox->setCurrentIndex(alignIdx);
-
+		ui->textAlignBox->setCurrentIndex(ui->textAlignBox->findData(ed.align));
 		ui->maxWidthSpinBox->setValue(ed.maxWidth);
-		int wrapIdx = ui->wrapModeBox->findData(ed.wrapMode);
-		if (wrapIdx >= 0) ui->wrapModeBox->setCurrentIndex(wrapIdx);
-
-		// ※outlineSizeなどのスピンボックスがあればここでセット
-		ui->outlineSize->blockSignals(true);
+		ui->wrapModeBox->setCurrentIndex(ui->wrapModeBox->findData(ed.wrapMode));
 		ui->outlineSize->setValue(ed.outlineSize);
-		ui->outlineSize->blockSignals(false);
 
 		ui->posX_text->blockSignals(false);
 		ui->posY_text->blockSignals(false);
@@ -448,210 +411,110 @@ void RTAPluginDock::SetupStyleSignals()
 		ui->visibleCheckBox->blockSignals(false);
 		ui->maxWidthSpinBox->blockSignals(false);
 		ui->wrapModeBox->blockSignals(false);
+		ui->outlineSize->blockSignals(false);
 	});
 
-	// アライメント変更
-	connect(ui->textAlignBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
-		QString id = textElementMap.at(ui->textSelectBox->currentText());
-		layoutData[this->currentLayoutName][id].align = ui->textAlignBox->itemData(index).toString();
+	// 値変更
+	auto save = [this]() {
+		this->SaveOverlayData();
+	};
+	connect(ui->posX_text, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double v) {
+		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].pos.setX(v);
+		this->SaveOverlayData();
+	});
+	connect(ui->posY_text, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double v) {
+		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].pos.setY(v);
+		this->SaveOverlayData();
+	});
+	connect(ui->textAlignBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int i) {
+		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].align =
+			ui->textAlignBox->itemData(i).toString();
+		this->SaveOverlayData();
+	});
+	connect(ui->visibleCheckBox, &QCheckBox::checkStateChanged, this, [this](int s) {
+		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].isVisible =
+			(s == Qt::Checked);
+		this->SaveOverlayData();
+	});
+	connect(ui->maxWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int v) {
+		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].maxWidth = v;
+		this->SaveOverlayData();
+	});
+	connect(ui->wrapModeBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int i) {
+		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].wrapMode =
+			ui->wrapModeBox->itemData(i).toString();
+		this->SaveOverlayData();
+	});
+	connect(ui->outlineCheckBox, &QCheckBox::checkStateChanged, this, [this](int s) {
+		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].outlineEnabled =
+			(s == Qt::Checked);
+		this->SaveOverlayData();
+	});
+	connect(ui->outlineSize, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int v) {
+		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].outlineSize =
+			v;
 		this->SaveOverlayData();
 	});
 
-	// フォント変更
+	// ダイアログ系
 	connect(ui->fontSetting, &QPushButton::clicked, this, [this]() {
 		QString id = textElementMap.at(ui->textSelectBox->currentText());
 		bool ok;
-		QFont font =
-			QFontDialog::getFont(&ok, layoutData[this->currentLayoutName][id].font, this, "フォント選択");
+		QFont f = QFontDialog::getFont(&ok, layoutData[this->currentLayoutName][id].font, this);
 		if (ok) {
-			layoutData[this->currentLayoutName][id].font = font;
+			layoutData[this->currentLayoutName][id].font = f;
 			this->SaveOverlayData();
 		}
 	});
-
-	// 文字色変更
 	connect(ui->StyleColorBtn, &QPushButton::clicked, this, [this]() {
 		QString id = textElementMap.at(ui->textSelectBox->currentText());
-		QColor color =
-			QColorDialog::getColor(QColor(layoutData[this->currentLayoutName][id].color), this, "色選択");
-		if (color.isValid()) {
-			layoutData[this->currentLayoutName][id].color = color.name();
+		QColor c = QColorDialog::getColor(QColor(layoutData[this->currentLayoutName][id].color), this);
+		if (c.isValid()) {
+			layoutData[this->currentLayoutName][id].color = c.name();
 			this->SaveOverlayData();
 		}
 	});
-
-	// タイマーストップカラー
-	connect(ui->TimerStopColorChangeBtn, &QPushButton::clicked, this, [this]() {
-		QColor color = QColorDialog::getColor(QColor(timerStopColor), this, "停止時カラー選択");
-		if (color.isValid()) {
-			this->timerStopColor = color.name();
-			this->SaveOverlayData();
-		}
-	});
-
-	// アウトライン有効化
-	connect(ui->outlineCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		QString id = textElementMap.at(ui->textSelectBox->currentText());
-		layoutData[this->currentLayoutName][id].outlineEnabled = (state == Qt::Checked);
-		this->SaveOverlayData();
-	});
-
-	// アウトライン色変更ボタン
 	connect(ui->outlineColorButton, &QPushButton::clicked, this, [this]() {
 		QString id = textElementMap.at(ui->textSelectBox->currentText());
-		QColor color = QColorDialog::getColor(QColor(layoutData[this->currentLayoutName][id].outlineColor), this,
-						      "アウトライン色選択");
-		if (color.isValid()) {
-			layoutData[this->currentLayoutName][id].outlineColor = color.name();
+		QColor c = QColorDialog::getColor(QColor(layoutData[this->currentLayoutName][id].outlineColor), this);
+		if (c.isValid()) {
+			layoutData[this->currentLayoutName][id].outlineColor = c.name();
 			this->SaveOverlayData();
 		}
 	});
-	
-	// アウトライン太さ変更
-	connect(ui->outlineSize, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int value) {
-		QString id = textElementMap.at(ui->textSelectBox->currentText());
-		layoutData[this->currentLayoutName][id].outlineSize = value;
-		this->SaveOverlayData();
-	});
 
-	// 名前の前にアイコンを表示するフラグ
-	connect(ui->showRunner1IconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		this->showIcons[0] = (state == Qt::Checked);
-		this->SaveOverlayData();
-	});
-	// 名前の前にアイコンを表示するフラグ
-	connect(ui->showRunner2IconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		this->showIcons[1] = (state == Qt::Checked);
-		this->SaveOverlayData();
-	});
-	// 名前の前にアイコンを表示するフラグ
-	connect(ui->showRunner3IconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		this->showIcons[2] = (state == Qt::Checked);
-		this->SaveOverlayData();
-	});
-	// 名前の前にアイコンを表示するフラグ
-	connect(ui->showRunner4IconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		this->showIcons[3] = (state == Qt::Checked);
-		this->SaveOverlayData();
-	});
-	// 名前の前にアイコンを表示するフラグ
-	connect(ui->showCommentatorIconCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		this->showIcons[4] = (state == Qt::Checked);
-		this->SaveOverlayData();
-	});
-
-	// 表示ON/OFF切り替え
-	connect(ui->visibleCheckBox, &QCheckBox::checkStateChanged, this, [this](int state) {
-		QString id = textElementMap.at(ui->textSelectBox->currentText());
-		layoutData[this->currentLayoutName][id].isVisible = (state == Qt::Checked);
-		this->SaveOverlayData();
-	});
-
-	// 最大幅とモードの変更
-	connect(ui->maxWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int value) {
-		QString id = textElementMap.at(ui->textSelectBox->currentText());
-		layoutData[this->currentLayoutName][id].maxWidth = value;
-		this->SaveOverlayData();
-	});
-
-	connect(ui->wrapModeBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
-		QString id = textElementMap.at(ui->textSelectBox->currentText());
-		layoutData[this->currentLayoutName][id].wrapMode = ui->wrapModeBox->itemData(index).toString();
-		this->SaveOverlayData();
-	});
+	connect(ui->SavePosSettingBtn, &QPushButton::clicked, this, &RTAPluginDock::onSavePosSettingClicked);
+	connect(ui->LoadPosSettingBtn, &QPushButton::clicked, this, &RTAPluginDock::onLoadPosSettingClicked);
 }
 
-void RTAPluginDock::SetupSecheduleSignals() {
-	// テーブルの初期設定
-	ui->scheduleTable->setColumnCount(6);
-	ui->scheduleTable->setHorizontalHeaderLabels({"GameTitle", "Runner", "Category", "Platform", "Estimate", "Commentator"});
-	// 1. 列幅をユーザーがマウスでドラッグして変更できるようにする
-	ui->scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-
-	// 2. 各列のデフォルトの幅（ピクセル）を設定
-	ui->scheduleTable->horizontalHeader()->setDefaultSectionSize(120);
-
-	// 3. これ以上狭くならない「最小幅」を設定（これが横スクロールバー発生のトリガーになります）
-	ui->scheduleTable->horizontalHeader()->setMinimumSectionSize(80);
-
-	// 4. (任意) 一番右の列だけは、余白があれば右端まで伸ばす
-	ui->scheduleTable->horizontalHeader()->setStretchLastSection(true);
-
-	// 行の追加
-	connect(ui->addScheduleBtn, &QPushButton::clicked, this, [this]() {
-		int row = ui->scheduleTable->currentRow() + 1;
-		if (row < 0)
-			row = ui->scheduleTable->rowCount(); // 未選択なら一番下
-		ui->scheduleTable->insertRow(row);
+void RTAPluginDock::InitGlobalTab()
+{
+	connect(ui->TimerStopColorChangeBtn, &QPushButton::clicked, this, [this]() {
+		QColor c = QColorDialog::getColor(QColor(timerStopColor), this);
+		if (c.isValid()) {
+			this->timerStopColor = c.name();
+			this->SaveOverlayData();
+		}
 	});
 
-	// 行の削除
-	connect(ui->removeScheduleBtn, &QPushButton::clicked, this, [this]() {
-		int row = ui->scheduleTable->currentRow();
-		if (row >= 0)
-			ui->scheduleTable->removeRow(row);
-	});
-
-	// テーブルの編集内容をシステムに適用
-	connect(ui->updateScheduleBtn, &QPushButton::clicked, this, [this]() {
-		this->currentGameData.clear();
-		ui->gameSelectBox->blockSignals(true);
-		ui->gameSelectBox->clear();
-
-		for (int i = 0; i < ui->scheduleTable->rowCount(); ++i) {
-			GameData data;
-			data.gameTitle = ui->scheduleTable->item(i, 0) ? ui->scheduleTable->item(i, 0)->text() : "";
-			data.runnerName = ui->scheduleTable->item(i, 1) ? ui->scheduleTable->item(i, 1)->text() : "";
-			data.category = ui->scheduleTable->item(i, 2) ? ui->scheduleTable->item(i, 2)->text() : "";
-			data.hardware = ui->scheduleTable->item(i, 3) ? ui->scheduleTable->item(i, 3)->text() : "";
-
-			// 予定時間の処理（文字列から秒への変換など、用途に合わせて調整）
-			QString estStr = ui->scheduleTable->item(i, 4) ? ui->scheduleTable->item(i, 4)->text() : "00:00:00";
-			QTime t = QTime::fromString(estStr, "HH:mm:ss");
-			data.estimateTime = t.isValid() ? (t.hour() * 3600 + t.minute() * 60 + t.second()) : 0;
-
-			data.commentator = ui->scheduleTable->item(i, 5) ? ui->scheduleTable->item(i, 5)->text() : "";
-
-			this->currentGameData.push_back(data);
-			ui->gameSelectBox->addItem(data.gameTitle);
-		}
-
-		ui->gameSelectBox->blockSignals(false);
-		if (ui->gameSelectBox->count() > 0) {
-			emit ui->gameSelectBox->currentTextChanged(ui->gameSelectBox->currentText());
-		}
+	auto onIconToggled = [this](int) {
+		this->showIcons[0] = ui->showRunner1IconCheckBox->isChecked();
+		this->showIcons[1] = ui->showRunner2IconCheckBox->isChecked();
+		this->showIcons[2] = ui->showRunner3IconCheckBox->isChecked();
+		this->showIcons[3] = ui->showRunner4IconCheckBox->isChecked();
+		this->showIcons[4] = ui->showCommentatorIconCheckBox->isChecked();
 		this->SaveOverlayData();
-		QMessageBox::information(this, "更新", "スケジュールを更新・適用しました。");
-	});
+	};
+	connect(ui->showRunner1IconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
+	connect(ui->showRunner2IconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
+	connect(ui->showRunner3IconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
+	connect(ui->showRunner4IconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
+	connect(ui->showCommentatorIconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
 
-	// スケジュールのエクスポート(JSON出力)
-	connect(ui->exportScheduleBtn, &QPushButton::clicked, this, [this]() {
-		QString fileName = QFileDialog::getSaveFileName(this, "スケジュールを出力", ".", "JSON (*.json)");
-		if (fileName.isEmpty())
-			return;
-
-		QJsonArray itemsArray;
-		for (const auto &data : this->currentGameData) {
-			QJsonObject item;
-			QJsonArray dataArray = {data.gameTitle, data.runnerName, data.category, data.hardware, data.commentator};
-			item.insert("data", dataArray);
-			item.insert("length_t", data.estimateTime);
-			itemsArray.append(item);
-		}
-		QJsonObject scheduleObj;
-		QJsonArray colArr = {"GameTitle", "Runner", "Category", "Platform", "Commentator"};
-		scheduleObj.insert("columns", colArr);
-		scheduleObj.insert("items", itemsArray);
-		QJsonObject root;
-		root.insert("schedule", scheduleObj);
-
-		QFile file(fileName);
-		if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-			file.write(QJsonDocument(root).toJson());
-			file.close();
-			QMessageBox::information(this, "出力成功", "スケジュールを保存しました。");
-		}
-	});
+	connect(ui->TimerStartScreenShotCheck, &QCheckBox::checkStateChanged, this,
+		[this](int s) { this->autoScreenShotOnStart = (s == Qt::Checked); });
+	connect(ui->TimerStopScreenShotCheck, &QCheckBox::checkStateChanged, this,
+		[this](int s) { this->autoScreenShotOnStop = (s == Qt::Checked); });
 }
 
 void RTAPluginDock::SaveOverlayData()

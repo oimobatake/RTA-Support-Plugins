@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>398</width>
-    <height>525</height>
+    <height>536</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -204,7 +204,25 @@
            </widget>
           </item>
           <item>
-           <widget class="QComboBox" name="gameSelectBox"/>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QToolButton" name="prevGameBtn">
+              <property name="text">
+               <string>▲</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="gameSelectBox"/>
+            </item>
+            <item>
+             <widget class="QToolButton" name="nextGameBtn">
+              <property name="text">
+               <string>▼</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <layout class="QGridLayout" name="gridLayout">
@@ -566,20 +584,6 @@
            </widget>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_13">
-            <item>
-             <widget class="QLabel" name="FormatCategory">
-              <property name="text">
-               <string>Category</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="FormatCategoryBox"/>
-            </item>
-           </layout>
-          </item>
-          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_11">
             <item>
              <widget class="QLabel" name="FormatGameTitle">
@@ -590,6 +594,20 @@
             </item>
             <item>
              <widget class="QComboBox" name="FormatGameTitleBox"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_13">
+            <item>
+             <widget class="QLabel" name="FormatCategory">
+              <property name="text">
+               <string>Category</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="FormatCategoryBox"/>
             </item>
            </layout>
           </item>
