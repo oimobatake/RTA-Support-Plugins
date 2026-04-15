@@ -1,42 +1,44 @@
 ﻿#pragma once
-#pragma once
 
 #include <QWidget>
 #include <QTimer>
 #include <QTime>
-
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QUrl>
-
-#include <QFileDialog>
-#include <QFileDialog>
-#include <QFile>
-#include <QJsonDocument>
+#include <QMap>
+#include <QFont>
 #include <QJsonObject>
-#include <QJsonArray>
-#include <QDebug>
-#include <QMessageBox>
+#include <vector>
 
-#include "json.hpp"
-
-// .uiファイルから自動生成されるクラスの先行宣言
 namespace Ui {
 class RTAPluginDock;
 }
 
+// スケジュール一件分のデータ構造
 struct GameData {
-	// ゲームデータを保持する構造体
 	QString gameTitle;
 	QString runnerName;
 	QString category;
 	QString hardware;
+	QString commentator;
 	int estimateTime;
 };
 
+// 各テキスト要素のスタイルと座標をまとめた構造体
+struct ElementData {
+	QPointF pos = QPointF(0.0, 0.0);
+	QFont font = QFont("Arial", 48);
+	QString color = "#FFFFFF";
+	QString align = "center";
+	bool outlineEnabled = false;
+	int outlineSize = 2;
+	QString outlineColor = "#000000";
+
+	bool isVisible = true;
+
+	int maxWidth = 0;          // 0なら制限なし
+	QString wrapMode = "none"; // "none", "shrink", "wrap"
+};
 
 class RTAPluginDock : public QWidget {
-	// このマクロはQtのシグナル/スロット機能を使うために必須
 	Q_OBJECT
 
 public:
@@ -44,44 +46,44 @@ public:
 	~RTAPluginDock();
 
 private slots:
-	// ここにスロット関数を定義する
-	void onUpdateDoneButtonClicked();	// Doneが押された時の挙動
-	void onUpdateTitle();				// タイトルテキスト更新
-	void onUpdateRunnerName(int);
-	void onUpdateCountDownTimer();		// カウントダウンタイマーの更新
-	void onUpdateCountUpTimer();		// カウントアップタイマーの更新
-
-	void ChangeText(const char *, const char *); // テキスト変更用の関数
-	void ChangeTextColor(const char *, int);          // テキストカラー変更用の関数
-
-	void onFontChangeButtonClicked();
-	void onChangeTextFont(const char*, const QFont&); // フォントとアウトライン変更用の関数
-	void onOutlineChangeSetting(int);
-
-
-	// ドックにソースの一覧をリストに表示する
-	//void getCurrentSceneTextSourceList();
-
-	// JSON取得ボタンが押された時に呼ばれる
-
-	//void onScheduleFetchFinished(QNetworkReply *reply); // JSON取得完了時の処理
-
+	// UI操作・イベント
+	void onUpdateDoneButtonClicked();
 	void loadAndParseJsonFile();
+	void onApplyScheduleClicked();
+	void onSavePosSettingClicked();
+	void onLoadPosSettingClicked();
+
+	// オーバーレイ更新のコア
+	void SaveOverlayData();
+	void LoadOverlayData();
 
 private:
-	// .uiファイルのウィジェットへのポインタを保持するメンバー
+	// --- タブ別初期化関数 (リファクタリング) ---
+	void InitMainTab();     // メイン進行タブ
+	void InitScheduleTab(); // スケジュール管理タブ
+	void InitDesignTab();   // デザイン・レイアウト編集タブ
+	void InitGlobalTab();   // グローバル設定タブ
+	void InitCommon();      // 共通・初期化処理
+
 	Ui::RTAPluginDock *ui;
-	QTimer *timer;						// タイマー用のQTimeオブジェクト
-	QTime initCountDownTimer;			// 初期カウントダウンタイマー
+	QTimer *timer;          // メインタイマー
+	QTimer *posUpdateTimer; // 座標更新の負荷軽減用
+
+	// 内部データ保持用
+	QString runnerTimers[4];
+	QString timerState = "Reset";
 	QFont currentFont;
-	int currentOutlineColor = 0x000000; // 現在のアウトラインカラー
-	int timerColor = 0xFFFFFF;          // タイマーのデフォルトカラー
-	int timerStopColor = 0xFFFF00;      // タイマーストップ時のデフォルトカラー
+	QTime initCountDownTimer;
 
-	// ネットワークアクセス用のマネージャー
-	//QNetworkAccessManager *networkManager;
+	bool showIcons[5] = {false, false, false, false, false};
+	bool autoScreenShotOnStart = false;
+	bool autoScreenShotOnStop = false;
 
-	QJsonObject scheduleData; // JSONデータを保持するための変数
+	// [レイアウト名] -> [要素ID] -> [設定データ] の2次元マップ
+	std::map<QString, std::map<QString, ElementData>> layoutData;
 
-	std::vector<GameData> currentGameData; // 現在のゲームデータを保持するための変数
+	QString currentLayoutName = "main";
+	QString timerStopColor = "#FFFF00";
+	QJsonObject scheduleData;
+	std::vector<GameData> currentGameData;
 };

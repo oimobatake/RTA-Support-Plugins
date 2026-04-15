@@ -82,8 +82,8 @@
       "cacheVariables": {
         "ENABLE_FRONTEND_API": true,
         "ENABLE_QT": true,
-        "CMAKE_PREFIX_PATH": "$env{QTDIR}",
-        "LibObs_DIR": ""
+        "CMAKE_PREFIX_PATH": "C:\\Qt\\6.8.3\\msvc2022_64",
+        "LibObs_DIR": "C:\\Users\\batak\\Desktop\\obs_git\\obs-studio\\build_x64"
       }
     },
     {
