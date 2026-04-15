@@ -12,9 +12,7 @@ OBS Studio上でRTAイベント等の進行を支援するためのプラグイ�
 ### 概要
 プラグイン本体（ビルド済みのファイル）を OBS のプラグインフォルダに置き、オーバーレイ表示用の `index.html` とプラグインが生成する `overlay_data.json` を同じフォルダに置くか、Browser ソースから参照します。
 
----
-
-### 1) プラグイン本体の配置
+### プラグイン本体の配置
 1. OBS を終了します（必須）。  
 2. ビルド済みプラグインファイル（Windows: `*.dll` ／ macOS/Linux: `*.so` 等）を OBS のプラグインフォルダにコピーします。  
    - Windows: - 64bit: `C:\Program Files\obs-studio\obs-plugins\64bit\`   
