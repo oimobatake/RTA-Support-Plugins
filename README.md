@@ -7,6 +7,19 @@ OBS Studio上でRTAイベント等の進行を支援するためのプラグイ�
 
 タイマー操作、テキストソースの自動生成、スケジュールの管理を一括で行うことができます。
 
+## OBS へのインストールと配置
+
+### 概要
+プラグイン本体（ビルド済みのファイル）を OBS のプラグインフォルダに置き、オーバーレイ表示用の `index.html` とプラグインが生成する `overlay_data.json` を同じフォルダに置くか、Browser ソースから参照します。
+
+---
+
+### 1) プラグイン本体の配置
+1. OBS を終了します（必須）。  
+2. ビルド済みプラグインファイル（Windows: `*.dll` ／ macOS/Linux: `*.so` 等）を OBS のプラグインフォルダにコピーします。  
+   - Windows: - 64bit: `C:\Program Files\obs-studio\obs-plugins\64bit\`   
+3. OBS を再起動し、プラグインの UI（Dock）や設定が表示されることを確認します（メニューの「ドック」などを確認）。
+
 # Main タブ
 
 概要
@@ -103,8 +116,6 @@ OBS Studio上でRTAイベント等の進行を支援するためのプラグイ�
 overlay_data.json の置き場所
 - プラグインは実行環境に応じた「プラグイン設定フォルダ」に `overlay_data.json` を作成します。代表的な例は次の通りです（環境によって異なります）：
   - Windows（例）: `%APPDATA%\obs-studio\plugin_config\<プラグイン名>\overlay_data.json`  
-  - macOS（例）: `~/Library/Application Support/obs-studio/plugin_config/<プラグイン名>/overlay_data.json`  
-  - Linux（例）: `~/.config/obs-studio/plugin_config/<プラグイン名>/overlay_data.json`
 - 実際の作成場所は環境や OBS の設定に依存します。初回は UI 操作で保存を行うとファイルが生成されるので、その後ファイル検索で場所を確認してください。
 
 index.html の配置と OBS での読み込み
