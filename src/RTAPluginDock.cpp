@@ -1,5 +1,6 @@
 ﻿#include "RTAPluginDock.h"
 #include "ui_RTAPluginDock.h"
+#include "OverlayEditor.h"
 
 #include <obs.h>
 #include <obs-frontend-api.h>
@@ -485,6 +486,30 @@ void RTAPluginDock::InitDesignTab()
 
 	connect(ui->SavePosSettingBtn, &QPushButton::clicked, this, &RTAPluginDock::onSavePosSettingClicked);
 	connect(ui->LoadPosSettingBtn, &QPushButton::clicked, this, &RTAPluginDock::onLoadPosSettingClicked);
+
+	connect(ui->visualEditorBtn, &QPushButton::clicked, this, [this]() {
+		// 現在選択中のレイアウト（main, setup等）のデータを渡してエディタを開く
+		OverlayEditor editor(layoutData[currentLayoutName], this);
+
+		if (editor.exec() == QDialog::Accepted) {
+			// エディタからの編集結果（全要素の座標）を取得
+			auto results = editor.getResult();
+
+			// プラグイン内部のデータを更新
+			for (auto const &[id, pos] : results) {
+				layoutData[currentLayoutName][id].pos = pos;
+			}
+
+			// UIの表示（座標SpinBoxなど）を、今選択されている要素の値に同期させる
+			emit ui->textSelectBox->currentTextChanged(ui->textSelectBox->currentText());
+
+			// JSONに保存してOBS（ブラウザソース）に即時反映
+			this->SaveOverlayData();
+
+			// ステータスログ等（任意）
+			// blog(LOG_INFO, "Visual Editor: Applied coordinates to layout '%s'", currentLayoutName.toUtf8().constData());
+		}
+	});
 }
 
 void RTAPluginDock::InitGlobalTab()

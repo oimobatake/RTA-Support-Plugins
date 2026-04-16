@@ -813,6 +813,13 @@
            </layout>
           </item>
           <item>
+           <widget class="QPushButton" name="visualEditorBtn">
+            <property name="text">
+             <string>OpenEditor</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_19">
             <item>
              <widget class="QLabel" name="label_28">
