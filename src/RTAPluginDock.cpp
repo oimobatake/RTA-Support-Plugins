@@ -432,7 +432,7 @@ void RTAPluginDock::InitDesignTab()
 			ui->textAlignBox->itemData(i).toString();
 		this->SaveOverlayData();
 	});
-	connect(ui->visibleCheckBox, &QCheckBox::checkStateChanged, this, [this](int s) {
+	connect(ui->visibleCheckBox, &QCheckBox::stateChanged, this, [this](int s) {
 		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].isVisible =
 			(s == Qt::Checked);
 		this->SaveOverlayData();
@@ -446,7 +446,7 @@ void RTAPluginDock::InitDesignTab()
 			ui->wrapModeBox->itemData(i).toString();
 		this->SaveOverlayData();
 	});
-	connect(ui->outlineCheckBox, &QCheckBox::checkStateChanged, this, [this](int s) {
+	connect(ui->outlineCheckBox, &QCheckBox::stateChanged, this, [this](int s) {
 		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].outlineEnabled =
 			(s == Qt::Checked);
 		this->SaveOverlayData();
@@ -530,15 +530,14 @@ void RTAPluginDock::InitGlobalTab()
 		this->showIcons[4] = ui->showCommentatorIconCheckBox->isChecked();
 		this->SaveOverlayData();
 	};
-	connect(ui->showRunner1IconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
-	connect(ui->showRunner2IconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
-	connect(ui->showRunner3IconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
-	connect(ui->showRunner4IconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
-	connect(ui->showCommentatorIconCheckBox, &QCheckBox::checkStateChanged, this, onIconToggled);
-
-	connect(ui->TimerStartScreenShotCheck, &QCheckBox::checkStateChanged, this,
+	connect(ui->showRunner1IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
+	connect(ui->showRunner2IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
+	connect(ui->showRunner3IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
+	connect(ui->showRunner4IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
+	connect(ui->showCommentatorIconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
+	connect(ui->TimerStartScreenShotCheck, &QCheckBox::stateChanged, this,
 		[this](int s) { this->autoScreenShotOnStart = (s == Qt::Checked); });
-	connect(ui->TimerStopScreenShotCheck, &QCheckBox::checkStateChanged, this,
+	connect(ui->TimerStopScreenShotCheck, &QCheckBox::stateChanged, this,
 		[this](int s) { this->autoScreenShotOnStop = (s == Qt::Checked); });
 }
 

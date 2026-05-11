@@ -87,6 +87,20 @@
       }
     },
     {
+      "name": "windows-x64-qt-6.6.3",
+      "displayName": "Windows x64 (with Qt 6.6.3)",
+      "inherits": "windows-x64",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "toolset": "v143",
+      "cacheVariables": {
+        "ENABLE_FRONTEND_API": true,
+        "ENABLE_QT": true,
+        "CMAKE_PREFIX_PATH": "C:\\Qt\\6.6.3\\msvc2019_64",
+        "LibObs_DIR": "C:\\Users\\batak\\Desktop\\obs_git\\obs-studio\\build_x64"
+      }
+    },
+    {
       "name": "windows-ci-x64",
       "inherits": [
         "windows-x64"
