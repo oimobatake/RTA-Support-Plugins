@@ -64,6 +64,13 @@ static const std::map<QString, QString> textElementMap =
 	{"次ゲーム3: 予定時間", "NextEstimate_3"}
 };
 
+// 「配置済み」の概念がなかった頃のデータ用: 表示ONで、初期位置 (0,0) から動かされているものを配置済みとみなす
+// （初期状態の要素はすべて左上 (0,0) に重なっていたため）
+static bool isPlacedByLegacyRule(const ElementData &ed)
+{
+	return ed.isVisible && !(qFuzzyIsNull(ed.pos.x()) && qFuzzyIsNull(ed.pos.y()));
+}
+
 // スケジュール解析用ヘルパー
 int findColumnIndexByKeywords(const std::vector<std::string> &columns, const std::vector<QString> &keywords)
 {
@@ -369,6 +376,7 @@ void RTAPluginDock::InitDesignTab()
 			return;
 		if (QMessageBox::Yes == QMessageBox::question(this, "削除", "このレイアウトを削除しますか？")) {
 			layoutData.erase(this->currentLayoutName);
+			layoutBackgrounds.erase(this->currentLayoutName);
 			ui->layoutSelectBox->removeItem(ui->layoutSelectBox->currentIndex());
 		}
 	});
@@ -411,11 +419,15 @@ void RTAPluginDock::InitDesignTab()
 		this->SaveOverlayData();
 	};
 	connect(ui->posX_text, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double v) {
-		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].pos.setX(v);
+		ElementData &ed = layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())];
+		ed.pos.setX(v);
+		ed.isPlaced = true; // 座標を指定したら配置済みとして扱う
 		this->SaveOverlayData();
 	});
 	connect(ui->posY_text, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double v) {
-		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].pos.setY(v);
+		ElementData &ed = layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())];
+		ed.pos.setY(v);
+		ed.isPlaced = true; // 座標を指定したら配置済みとして扱う
 		this->SaveOverlayData();
 	});
 	connect(ui->textAlignBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int i) {
@@ -479,27 +491,37 @@ void RTAPluginDock::InitDesignTab()
 	connect(ui->LoadPosSettingBtn, &QPushButton::clicked, this, &RTAPluginDock::onLoadPosSettingClicked);
 
 	connect(ui->visualEditorBtn, &QPushButton::clicked, this, [this]() {
-		// 現在選択中のレイアウト（main, setup等）のデータを渡してエディタを開く
-		OverlayEditor editor(layoutData[currentLayoutName], this);
+		// プレビュー用に、いま表示されている文字列を渡す
+		QMap<QString, QString> values;
+		QJsonObject valObj = CollectValues();
+		for (auto it = valObj.begin(); it != valObj.end(); ++it)
+			values[it.key()] = it.value().toString();
+
+		const auto originalLayouts = layoutData;
+		OverlayEditor editor(layoutData, currentLayoutName, layoutBackgrounds, values, this);
+
+		// 「リアルタイム反映」: 編集中の内容を一時的に OBS へ書き出す
+		editor.setLivePreviewCallback([this](const OverlayEditor::Layouts &preview) {
+			layoutData = preview;
+			this->SaveOverlayData();
+		});
 
 		if (editor.exec() == QDialog::Accepted) {
-			// エディタからの編集結果（全要素の座標）を取得
-			auto results = editor.getResult();
+			layoutData = editor.layouts();
+			layoutBackgrounds = editor.backgrounds();
 
-			// プラグイン内部のデータを更新
-			for (auto const &[id, pos] : results) {
-				layoutData[currentLayoutName][id].pos = pos;
-			}
-
-			// UIの表示（座標SpinBoxなど）を、今選択されている要素の値に同期させる
-			emit ui->textSelectBox->currentTextChanged(ui->textSelectBox->currentText());
-
-			// JSONに保存してOBS（ブラウザソース）に即時反映
-			this->SaveOverlayData();
-
-			// ステータスログ等（任意）
-			// blog(LOG_INFO, "Visual Editor: Applied coordinates to layout '%s'", currentLayoutName.toUtf8().constData());
+			// エディタで切り替えたレイアウトをドック側でも選択する
+			QString edited = editor.currentLayout();
+			if (layoutData.count(edited) && edited != currentLayoutName)
+				ui->layoutSelectBox->setCurrentText(edited);
+		} else {
+			// キャンセル時は開く前の状態に戻す（リアルタイム反映の分も取り消す）
+			layoutData = originalLayouts;
 		}
+
+		// Design タブの表示（座標 SpinBox など）を同期し、OBS に反映
+		emit ui->textSelectBox->currentTextChanged(ui->textSelectBox->currentText());
+		this->SaveOverlayData();
 	});
 }
 
@@ -537,11 +559,8 @@ void RTAPluginDock::InitGlobalTab()
 	connect(ui->syncSceneCheckBox, &QCheckBox::stateChanged, this, [this](int) { this->SaveOverlayData(); });
 }
 
-void RTAPluginDock::SaveOverlayData()
+QJsonObject RTAPluginDock::CollectValues()
 {
-	QJsonObject root;
-
-	// values
 	QJsonObject valObj;
 	valObj.insert("GameTitle", ui->GameTitleText->text());
 	valObj.insert("RunnerName_1", ui->RunnerText_1->text());
@@ -582,6 +601,15 @@ void RTAPluginDock::SaveOverlayData()
 		}
 	}
 
+	return valObj;
+}
+
+void RTAPluginDock::SaveOverlayData()
+{
+	QJsonObject root;
+
+	QJsonObject valObj = CollectValues();
+	int currentIndex = ui->gameSelectBox->currentIndex();
 	root.insert("values", valObj);
 
 	// layouts (レイアウトごとの座標とスタイル)
@@ -609,6 +637,7 @@ void RTAPluginDock::SaveOverlayData()
 			s.insert("outlineEnabled", elData.outlineEnabled);
 			s.insert("outlineSize", elData.outlineSize);
 			s.insert("outlineColor", elData.outlineColor);
+			s.insert("isPlaced", elData.isPlaced);
 			s.insert("isVisible", elData.isVisible);
 			s.insert("maxWidth", elData.maxWidth);
 			s.insert("wrapMode", elData.wrapMode);
@@ -623,6 +652,9 @@ void RTAPluginDock::SaveOverlayData()
 		singleLayoutObj.insert("transforms", transObj);
 		singleLayoutObj.insert("styles", styleObj);
 		singleLayoutObj.insert("stopColor", QColor(timerStopColor).name()); // 既存コードから維持
+		auto bg = layoutBackgrounds.find(layoutName);
+		if (bg != layoutBackgrounds.end() && !bg->second.isEmpty())
+			singleLayoutObj.insert("editorBackground", bg->second);
 		layoutsObj.insert(layoutName, singleLayoutObj);
 	}
 	root.insert("layouts", layoutsObj);
@@ -712,6 +744,7 @@ void RTAPluginDock::LoadOverlayData()
 	ui->layoutSelectBox->blockSignals(true); // 余計な保存処理が走らないようにブロック
 	ui->layoutSelectBox->clear();
 	layoutData.clear();
+	layoutBackgrounds.clear();
 
 	// === layouts (シーンと座標・スタイル) の復元 ===
 	if (root.contains("layouts")) {
@@ -724,6 +757,8 @@ void RTAPluginDock::LoadOverlayData()
 			QJsonObject transObj = singleLayoutObj["transforms"].toObject();
 			QJsonObject styleObj = singleLayoutObj["styles"].toObject();
 			this->timerStopColor = singleLayoutObj["stopColor"].toString("#FF00FF"); // デフォルトはマゼンタ（わかりやすいように）
+			if (singleLayoutObj.contains("editorBackground"))
+				layoutBackgrounds[layoutName] = singleLayoutObj["editorBackground"].toString();
 
 			for (auto const &[name, id] : textElementMap) {
 				ElementData elData; // デフォルト値で初期化
@@ -752,6 +787,8 @@ void RTAPluginDock::LoadOverlayData()
 					elData.maxWidth = s.contains("maxWidth") ? s["maxWidth"].toInt() : 0;
 					elData.wrapMode = s.contains("wrapMode") ? s["wrapMode"].toString()
 										 : "none"; // ← 追加
+					elData.isPlaced = s.contains("isPlaced") ? s["isPlaced"].toBool()
+										 : isPlacedByLegacyRule(elData);
 				}
 				layoutData[layoutName][id] = elData;
 			}
@@ -881,6 +918,7 @@ void RTAPluginDock::onSavePosSettingClicked()
 		s.insert("outlineEnabled", elData.outlineEnabled);
 		s.insert("outlineSize", elData.outlineSize);
 		s.insert("outlineColor", elData.outlineColor);
+		s.insert("isPlaced", elData.isPlaced);
 		s.insert("isVisible", elData.isVisible);
 		s.insert("maxWidth", elData.maxWidth);
 		s.insert("wrapMode", elData.wrapMode);
@@ -947,6 +985,9 @@ void RTAPluginDock::onLoadPosSettingClicked()
 					layoutData[this->currentLayoutName][id].maxWidth = s["maxWidth"].toInt();
 				if (s.contains("wrapMode"))
 					layoutData[this->currentLayoutName][id].wrapMode = s["wrapMode"].toString();
+				ElementData &imported = layoutData[this->currentLayoutName][id];
+				imported.isPlaced = s.contains("isPlaced") ? s["isPlaced"].toBool()
+									     : isPlacedByLegacyRule(imported);
 			}
 		}
 	}

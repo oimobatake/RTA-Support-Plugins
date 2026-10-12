@@ -43,6 +43,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/RTAPluginDock.cpp
     src/RTAPluginDock.ui
     src/OverlayEditor.cpp
+    src/OverlayCanvas.cpp
 )
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})

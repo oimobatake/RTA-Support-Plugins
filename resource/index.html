@@ -161,8 +161,8 @@
                         const s = layoutData.styles[id];
                         if (!el || !s) continue;
 
-                        // 非表示なら以下の処理をスキップ
-                        if (s.isVisible === false) {
+                        // 未配置・非表示なら以下の処理をスキップ
+                        if (s.isPlaced === false || s.isVisible === false) {
                             el.style.display = 'none';
                             continue;
                         } else {

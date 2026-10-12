@@ -32,7 +32,8 @@ struct ElementData {
 	int outlineSize = 2;
 	QString outlineColor = "#000000";
 
-	bool isVisible = true;
+	bool isPlaced = false; // ビジュアルエディタで画面に配置済みか（未配置のパーツは表示されない）
+	bool isVisible = true; // 配置したまま一時的に隠すとき false
 
 	int maxWidth = 0;          // 0なら制限なし
 	QString wrapMode = "none"; // "none", "shrink", "wrap"
@@ -65,6 +66,7 @@ private:
 	void InitGlobalTab();   // グローバル設定タブ
 	void InitCommon();      // 共通・初期化処理
 	void RefreshScheduleTable(); // currentGameData をスケジュール表に反映
+	QJsonObject CollectValues();  // オーバーレイに表示する文字列（values）を集める
 
 	Ui::RTAPluginDock *ui;
 	QTimer *timer;          // メインタイマー
@@ -82,6 +84,8 @@ private:
 
 	// [レイアウト名] -> [要素ID] -> [設定データ] の2次元マップ
 	std::map<QString, std::map<QString, ElementData>> layoutData;
+	// [レイアウト名] -> ビジュアルエディタの背景画像パス（エディタ表示専用）
+	std::map<QString, QString> layoutBackgrounds;
 
 	QString currentLayoutName = "main";
 	QString timerStopColor = "#FFFF00";

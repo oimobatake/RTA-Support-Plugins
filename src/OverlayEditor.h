@@ -1,75 +1,156 @@
-﻿#pragma once
+#pragma once
 
 #include <QDialog>
-#include <QLabel>
-#include <QMouseEvent>
-#include <QPoint>
 #include <QMap>
 #include <QPointF>
+#include <functional>
+#include <map>
+#include <optional>
 #include "RTAPluginDock.h"
 
-// --- ドラッグ可能なラベルコンポーネント ---
-class DraggableLabel : public QLabel {
-	Q_OBJECT
-public:
-	DraggableLabel(const QString &id, const QString &text, QWidget *parent = nullptr)
-		: QLabel(text, parent),
-		  elementId(id)
-	{
+class QGraphicsScene;
+class QTreeWidget;
+class QTreeWidgetItem;
+class QLineEdit;
+class QLabel;
+class QComboBox;
+class QCheckBox;
+class QSpinBox;
+class QDoubleSpinBox;
+class QPushButton;
+class QToolButton;
+class QUndoStack;
+class QTimer;
+class QWidget;
+class CanvasView;
+class ElementItem;
 
-		// デザイン設定: 半透明の枠付きラベル
-		setFrameStyle(QFrame::Panel | QFrame::Plain);
-		setLineWidth(1);
-		setAlignment(Qt::AlignCenter);
-		setStyleSheet("background-color: rgba(222, 255, 154, 180);" // RTA風の黄緑色（半透明）
-			      "color: #000;"
-			      "font-weight: bold;"
-			      "border: 1px solid #000;"
-			      "padding: 4px;");
-		setCursor(Qt::SizeAllCursor); // 移動用カーソル
-		adjustSize();
-	}
-
-	QString elementId;
-
-signals:
-	void moved(const QString &id, const QPoint &newPos);
-
-protected:
-	void mousePressEvent(QMouseEvent *event) override
-	{
-		if (event->button() == Qt::LeftButton) {
-			dragStartPosition = event->pos();
-			raise(); // 最前面に持ってくる
-		}
-	}
-
-	void mouseMoveEvent(QMouseEvent *event) override
-	{
-		if (event->buttons() & Qt::LeftButton) {
-			QPoint newPos = mapToParent(event->pos() - dragStartPosition);
-
-			// キャンバス内からはみ出さないように制限（任意）
-			move(newPos);
-			emit moved(elementId, pos());
-		}
-	}
-
-private:
-	QPoint dragStartPosition;
-};
-
-// --- ビジュアルエディタダイアログ本体 ---
+// --- ビジュアルエディタ本体 ---
+// パーツ一覧（左）で選んだパーツをキャンバス（中央）に配置し、プロパティ（右）で見た目を編集する。
+// 開いた時点の全レイアウトのコピーを編集し、適用時に呼び出し側が layouts() で受け取る。
 class OverlayEditor : public QDialog {
 	Q_OBJECT
 public:
-	// 現在のレイアウトデータを受け取って初期化
-	OverlayEditor(const std::map<QString, ElementData> &data, QWidget *parent = nullptr);
+	using Elements = std::map<QString, ElementData>;
+	using Layouts = std::map<QString, Elements>;
 
-	// 編集結果の座標マップを返す
-	std::map<QString, QPointF> getResult() const { return resultCoords; }
+	OverlayEditor(const Layouts &layouts, const QString &currentLayout,
+		      const std::map<QString, QString> &backgrounds, const QMap<QString, QString> &values,
+		      QWidget *parent = nullptr);
+	~OverlayEditor() override;
+
+	const Layouts &layouts() const { return layoutsData; }
+	const std::map<QString, QString> &backgrounds() const { return bgPaths; }
+	QString currentLayout() const { return currentName; }
+
+	// 編集中の内容を OBS に反映するためのコールバック（「リアルタイム反映」用）
+	void setLivePreviewCallback(std::function<void(const Layouts &)> callback) { liveCallback = callback; }
+
+	// 元に戻す／やり直しから呼ばれる
+	void restoreLayout(const QString &layout, const Elements &elements);
+
+public slots:
+	void accept() override;
+	void reject() override;
 
 private:
-	const float scale = 0.5f; // 1920x1080を半分(960x540)で表示する倍率
-	std::map<QString, QPointF> resultCoords;
+	enum AlignMode { AlignLeft, AlignHCenter, AlignRight, AlignTop, AlignVCenter, AlignBottom, DistributeH, DistributeV };
+
+	Elements &cur() { return layoutsData[currentName]; }
+
+	// UI 構築
+	QWidget *buildToolbar();
+	QWidget *buildPalette();
+	QWidget *buildProperties();
+
+	// 表示の同期
+	void switchLayout(const QString &name);
+	void refreshItems();
+	void refreshItem(const QString &id);
+	void refreshPalette();
+	void syncPropertiesFromSelection();
+	void syncPaletteSelection();
+	void updateBackground();
+	QStringList selectedIds() const;
+	QString textFor(const QString &id) const;
+	void showHint(const QString &text);
+
+	// 編集操作
+	void commit(const QString &text, const Elements &before, const QString &mergeKey = QString());
+	void applyToSelection(const QString &text, const QString &mergeKey, const std::function<void(ElementData &)> &fn);
+	void startPlacing(const QString &id);
+	void stopPlacing();
+	void placeElement(const QString &id, const QPointF &anchor);
+	void unplaceSelected();
+	void onItemsMoved(const QMap<QString, QPointF> &before);
+	void nudge(int dx, int dy);
+	void alignSelection(AlignMode mode);
+	void centerOnCanvas(Qt::Orientation orientation);
+	void applyPreset(int index);
+	void copyFromLayout(const QString &source);
+	void unplaceAll();
+	void copyStyle();
+	void pasteStyle();
+	void showContextMenu(const QPoint &globalPos);
+	void scheduleLivePreview();
+
+	// データ
+	Layouts layoutsData;
+	Layouts originalLayouts;
+	std::map<QString, QString> bgPaths;
+	QMap<QString, QString> values;
+	QString currentName;
+	std::optional<ElementData> styleClipboard;
+	std::function<void(const Layouts &)> liveCallback;
+	bool syncing = false;
+
+	// キャンバス
+	QGraphicsScene *scene = nullptr;
+	CanvasView *view = nullptr;
+	std::map<QString, ElementItem *> items;
+	ElementItem *ghost = nullptr;
+
+	// ツールバー
+	QComboBox *layoutBox = nullptr;
+	QComboBox *zoomBox = nullptr;
+	QCheckBox *gridCheck = nullptr;
+	QCheckBox *snapCheck = nullptr;
+	QComboBox *gridSizeBox = nullptr;
+	QCheckBox *safeAreaCheck = nullptr;
+	QCheckBox *liveCheck = nullptr;
+	QToolButton *copyLayoutBtn = nullptr;
+
+	// パーツ一覧
+	QLineEdit *searchEdit = nullptr;
+	QTreeWidget *palette = nullptr;
+	std::map<QString, QTreeWidgetItem *> paletteItems;
+
+	// プロパティ
+	QWidget *propPanel = nullptr;
+	QLabel *propName = nullptr;
+	QDoubleSpinBox *posXSpin = nullptr;
+	QDoubleSpinBox *posYSpin = nullptr;
+	QCheckBox *visibleCheck = nullptr;
+	QPushButton *fontBtn = nullptr;
+	QSpinBox *fontSizeSpin = nullptr;
+	QCheckBox *boldCheck = nullptr;
+	QCheckBox *italicCheck = nullptr;
+	QPushButton *colorBtn = nullptr;
+	QComboBox *alignBox = nullptr;
+	QCheckBox *outlineCheck = nullptr;
+	QSpinBox *outlineSizeSpin = nullptr;
+	QPushButton *outlineColorBtn = nullptr;
+	QSpinBox *maxWidthSpin = nullptr;
+	QComboBox *wrapBox = nullptr;
+	QPushButton *pasteStyleBtn = nullptr;
+	QWidget *alignGroup = nullptr;
+	QList<QPushButton *> multiOnlyButtons;
+
+	// 下部
+	QLabel *hintLabel = nullptr;
+	QLabel *coordLabel = nullptr;
+	QLabel *zoomLabel = nullptr;
+
+	QUndoStack *undoStack = nullptr;
+	QTimer *liveTimer = nullptr;
 };
