@@ -1,6 +1,7 @@
 #include "OverlayEditor.h"
 #include "OverlayCanvas.h"
 #include "ElementCatalog.h"
+#include "RichTextMarkup.h"
 
 #include <QBoxLayout>
 #include <QGridLayout>
@@ -920,7 +921,8 @@ QWidget *OverlayEditor::buildProperties()
 QString OverlayEditor::textFor(const QString &id) const
 {
 	QString value = values.value(id);
-	if (!value.trimmed().isEmpty())
+	// タグだけで中身のない値（"<span></span>" など）は空とみなして仮の文字を出す
+	if (!richTextToPlain(value).isEmpty())
 		return value;
 	if (const ElementInfo *info = findElementInfo(id))
 		return info->sample;
