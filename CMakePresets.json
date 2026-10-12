@@ -131,7 +131,9 @@
       },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu"
+        "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu",
+        "ENABLE_FRONTEND_API": true,
+        "ENABLE_QT": true
       }
     },
     {

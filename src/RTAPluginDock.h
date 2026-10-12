@@ -64,6 +64,7 @@ private:
 	void InitDesignTab();   // デザイン・レイアウト編集タブ
 	void InitGlobalTab();   // グローバル設定タブ
 	void InitCommon();      // 共通・初期化処理
+	void RefreshScheduleTable(); // currentGameData をスケジュール表に反映
 
 	Ui::RTAPluginDock *ui;
 	QTimer *timer;          // メインタイマー
