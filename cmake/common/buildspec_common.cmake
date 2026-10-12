@@ -5,8 +5,6 @@ include_guard(GLOBAL)
 # _check_deps_version: Checks for obs-deps VERSION file in prefix paths
 function(_check_deps_version version)
   set(found FALSE)
-  # Expected hash for validation
-  set(EXPECTED_HASH "11d7b5fbb234e926b04b921203c152517a928032e757689d964c5f9a0a9a4157")
 
   foreach(path IN LISTS CMAKE_PREFIX_PATH)
     if(EXISTS "${path}/share/obs-deps/VERSION")
@@ -70,6 +68,7 @@ function(_setup_obs_studio)
       "${CMAKE_COMMAND}" -S "${dependencies_dir}/${_obs_destination}" -B
       "${dependencies_dir}/${_obs_destination}/build_${arch}" -G ${_cmake_generator} "${_cmake_arch}"
       -DOBS_CMAKE_VERSION:STRING=3.0.0 -DENABLE_PLUGINS:BOOL=OFF -DENABLE_FRONTEND:BOOL=OFF
+      -DENABLE_UI:BOOL=OFF -DCMAKE_COMPILE_WARNING_AS_ERROR:BOOL=OFF
       -DOBS_VERSION_OVERRIDE:STRING=${_obs_version} "-DCMAKE_PREFIX_PATH='${CMAKE_PREFIX_PATH}'" ${_is_fresh}
       ${_cmake_extra}
     RESULT_VARIABLE _process_result
@@ -173,9 +172,6 @@ function(_check_dependencies)
     endif()
 
     if(dependency STREQUAL obs-studio)
-    # OBS StudioのURLとハッシュを手動設定
-      set(OBS_STUDIO_ARCHIVE_URL "https://github.com/obsproject/obs-studio/archive/refs/tags/31.1.2.tar.gz")
-      set(OBS_STUDIO_ARCHIVE_HASH "11d7b5fbb234e926b04b921203c152517a928032e757689d964c5f9a0a9a4157")
       set(url ${url}/${file})
     else()
       set(url ${url}/${version}/${file})
