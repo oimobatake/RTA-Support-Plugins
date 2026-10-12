@@ -4,6 +4,8 @@
 #include <QGraphicsView>
 #include <QPixmap>
 #include <QFont>
+#include <QColor>
+#include <QPainterPath>
 #include <QMap>
 #include <QStringList>
 #include "RTAPluginDock.h"
@@ -44,12 +46,9 @@ private:
 	QString displayName;
 	ElementData ed;
 
-	// レイアウト計算結果
-	QFont renderFont;
-	QStringList lines;
-	QList<double> lineWidths;
-	double lineHeight = 0;
-	double baselineOffset = 0;
+	// レイアウト計算結果（基準点からの相対座標の文字の輪郭）
+	QPainterPath outlinePath;                 // 縁取り用（全文字）
+	QList<QPair<QColor, QPainterPath>> fills; // 塗り用（色ごと）
 	QRectF box;
 	bool hovered = false;
 };

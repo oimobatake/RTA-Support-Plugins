@@ -1,6 +1,8 @@
 ﻿#include "RTAPluginDock.h"
 #include "ui_RTAPluginDock.h"
 #include "OverlayEditor.h"
+#include "RichTextMarkup.h"
+#include "RichTextTools.h"
 
 #include <obs.h>
 #include <obs-frontend-api.h>
@@ -213,23 +215,24 @@ void RTAPluginDock::InitMainTab()
 	// 設定確定
 	connect(ui->textDone, &QPushButton::clicked, this, &RTAPluginDock::onUpdateDoneButtonClicked);
 
-	// ゲーム選択プルダウン
-	connect(ui->gameSelectBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
-		for (const auto &data : this->currentGameData) {
-			if (data.gameTitle == text) {
-				ui->GameTitleText->setText(data.gameTitle);
-				QStringList runners = data.runnerName.split(",");
-				ui->RunnerText_1->setText(runners.size() > 0 ? runners[0].trimmed() : "");
-				ui->RunnerText_2->setText(runners.size() > 1 ? runners[1].trimmed() : "");
-				ui->RunnerText_3->setText(runners.size() > 2 ? runners[2].trimmed() : "");
-				ui->RunnerText_4->setText(runners.size() > 3 ? runners[3].trimmed() : "");
-				ui->EstimateTime->setTime(QTime::fromMSecsSinceStartOfDay(data.estimateTime * 1000));
-				ui->CategoryText->setText(data.category);
-				ui->HardwareText->setText(data.hardware);
-				ui->CommentatorText->setText(data.commentator);
-				break;
-			}
-		}
+	// ゲームタイトルの一部だけ大きさ・色を変えるメニュー
+	installRichTextMenu(ui->GameTitleText);
+
+	// ゲーム選択プルダウン（表示はタグを除いた文字なので、行番号でスケジュールと対応させる）
+	connect(ui->gameSelectBox, &QComboBox::currentIndexChanged, this, [this](int index) {
+		if (index < 0 || index >= (int)this->currentGameData.size())
+			return;
+		const GameData &data = this->currentGameData[index];
+		ui->GameTitleText->setText(data.gameTitle);
+		QStringList runners = data.runnerName.split(",");
+		ui->RunnerText_1->setText(runners.size() > 0 ? runners[0].trimmed() : "");
+		ui->RunnerText_2->setText(runners.size() > 1 ? runners[1].trimmed() : "");
+		ui->RunnerText_3->setText(runners.size() > 2 ? runners[2].trimmed() : "");
+		ui->RunnerText_4->setText(runners.size() > 3 ? runners[3].trimmed() : "");
+		ui->EstimateTime->setTime(QTime::fromMSecsSinceStartOfDay(data.estimateTime * 1000));
+		ui->CategoryText->setText(data.category);
+		ui->HardwareText->setText(data.hardware);
+		ui->CommentatorText->setText(data.commentator);
 	});
 
 	// 次ゲーム選択ボタン
@@ -291,11 +294,11 @@ void RTAPluginDock::InitScheduleTab()
 			d.estimateTime = t.isValid() ? (t.hour() * 3600 + t.minute() * 60 + t.second()) : 0;
 			d.commentator = ui->scheduleTable->item(i, 5) ? ui->scheduleTable->item(i, 5)->text() : "";
 			this->currentGameData.push_back(d);
-			ui->gameSelectBox->addItem(d.gameTitle);
+			ui->gameSelectBox->addItem(richTextToPlain(d.gameTitle));
 		}
 		ui->gameSelectBox->blockSignals(false);
 		if (ui->gameSelectBox->count() > 0)
-			emit ui->gameSelectBox->currentTextChanged(ui->gameSelectBox->currentText());
+			emit ui->gameSelectBox->currentIndexChanged(ui->gameSelectBox->currentIndex());
 		this->SaveOverlayData();
 		QMessageBox::information(this, "成功", "スケジュールを反映しました。");
 	});
@@ -830,7 +833,7 @@ void RTAPluginDock::LoadOverlayData()
 			d.commentator = item["commentator"].toString();
 			d.estimateTime = item["estimateTime"].toInt();
 			this->currentGameData.push_back(d);
-			ui->gameSelectBox->addItem(d.gameTitle);
+			ui->gameSelectBox->addItem(richTextToPlain(d.gameTitle));
 		}
 		int idx = scheduleObj["currentIndex"].toInt(0);
 		if (idx >= 0 && idx < ui->gameSelectBox->count())
@@ -1125,7 +1128,7 @@ void RTAPluginDock::onApplyScheduleClicked()
 		data.estimateTime = itemObj["length_t"].toInt();
 
 		this->currentGameData.push_back(data);
-		ui->gameSelectBox->addItem(data.gameTitle);
+		ui->gameSelectBox->addItem(richTextToPlain(data.gameTitle));
 	}
 
 	RefreshScheduleTable();

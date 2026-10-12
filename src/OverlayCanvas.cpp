@@ -6,6 +6,7 @@
 #include <QPainterPath>
 #include <QFontMetricsF>
 #include <QTextLayout>
+#include "RichTextMarkup.h"
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
@@ -13,6 +14,7 @@
 #include <QScrollBar>
 #include <cmath>
 #include <limits>
+#include <memory>
 
 // ============================================================
 // ElementItem
@@ -24,6 +26,72 @@ ElementItem::ElementItem(const QString &id, const QString &name) : elementId(id)
 	setAcceptHoverEvents(true);
 }
 
+namespace {
+
+// 書式付きの文字を、要素の文字サイズ px でレイアウトしたもの
+struct RichLayout {
+	std::unique_ptr<QTextLayout> layout;
+	QList<QFont> runFonts; // RichText::runs と同じ並び
+	double width = 0;      // 最も長い行の幅
+};
+
+QFont fontForRun(const QFont &base, int px, const RichTextRun &run)
+{
+	QFont f = base;
+	f.setPixelSize(std::max(1, (int)std::lround(px * run.scale)));
+	if (run.bold)
+		f.setBold(true);
+	if (run.italic)
+		f.setItalic(true);
+	return f;
+}
+
+// wrapWidth > 0 なら折り返す。0 なら改行（<br>）以外では折り返さない
+void layoutRichText(const RichText &rt, const QString &shown, const QFont &baseFont, double wrapWidth, RichLayout &out)
+{
+	int px = baseFont.pixelSize();
+	out.layout = std::make_unique<QTextLayout>(shown, baseFont);
+	out.runFonts.clear();
+	out.width = 0;
+
+	QList<QTextLayout::FormatRange> formats;
+	for (const RichTextRun &run : rt.runs) {
+		QFont f = fontForRun(baseFont, px, run);
+		out.runFonts << f;
+		QTextLayout::FormatRange fr;
+		fr.start = run.start;
+		fr.length = run.length;
+		fr.format.setFont(f);
+		formats << fr;
+	}
+	out.layout->setFormats(formats);
+
+	QTextOption opt;
+	opt.setWrapMode(wrapWidth > 0 ? QTextOption::WrapAtWordBoundaryOrAnywhere : QTextOption::NoWrap);
+	out.layout->setTextOption(opt);
+
+	out.layout->beginLayout();
+	double y = 0;
+	for (QTextLine line = out.layout->createLine(); line.isValid(); line = out.layout->createLine()) {
+		line.setLineWidth(wrapWidth > 0 ? wrapWidth : 1e7);
+		line.setPosition(QPointF(0, y));
+		y += line.height();
+		out.width = std::max(out.width, line.naturalTextWidth());
+	}
+	out.layout->endLayout();
+}
+
+// CSS の line-height: 1.1 と同じ考え方で、フォントごとの上下の高さ（ベースラインから）を求める
+void addLineBox(const QFont &font, double &above, double &below)
+{
+	QFontMetricsF fm(font);
+	double halfLeading = (font.pixelSize() * 1.1 - (fm.ascent() + fm.descent())) / 2.0;
+	above = std::max(above, fm.ascent() + halfLeading);
+	below = std::max(below, fm.descent() + halfLeading);
+}
+
+} // namespace
+
 void ElementItem::setContent(const ElementData &data, const QString &text)
 {
 	prepareGeometryChange();
@@ -32,59 +100,99 @@ void ElementItem::setContent(const ElementData &data, const QString &text)
 	// index.html と同じく、保存されている文字サイズの数値を px として扱う
 	int px = data.font.pointSize() > 0 ? data.font.pointSize()
 					   : (data.font.pixelSize() > 0 ? data.font.pixelSize() : 48);
-	renderFont = data.font;
-	renderFont.setPixelSize(std::max(1, px));
+	QFont baseFont = data.font;
+	baseFont.setPixelSize(std::max(1, px));
 
-	QString shown = text;
-	shown.replace('\n', QChar::LineSeparator);
+	// index.html では innerHTML として入るので、タグ（大きさ・色の部分指定など）を解釈して描く
+	RichText rt = parseRichText(text);
+	bool wrap = data.maxWidth > 0 && data.wrapMode == "wrap";
+	QString shown = rt.text;
+	// 元の改行文字は、折り返しあり（pre-wrap）なら改行、なし（nowrap）なら空白として表示される
+	shown.replace('\n', wrap ? QChar(QChar::LineSeparator) : QChar(' '));
 
-	lines.clear();
-	lineWidths.clear();
-	double width = 0;
+	RichLayout rl;
+	layoutRichText(rt, shown, baseFont, wrap ? data.maxWidth : 0, rl);
+	double width = rl.width;
 
-	if (data.maxWidth > 0 && data.wrapMode == "wrap") {
-		// 自動改行: 最大幅で折り返す（枠の幅は最大幅で固定）
-		QTextLayout layout(shown, renderFont);
-		QTextOption opt;
-		opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-		layout.setTextOption(opt);
-		layout.beginLayout();
-		for (QTextLine line = layout.createLine(); line.isValid(); line = layout.createLine()) {
-			line.setLineWidth(data.maxWidth);
-			lines << shown.mid(line.textStart(), line.textLength()).trimmed();
-		}
-		layout.endLayout();
-		if (lines.isEmpty())
-			lines << QString();
+	if (wrap) {
+		// 自動改行: 枠の幅は最大幅で固定
 		width = data.maxWidth;
-	} else {
-		QFontMetricsF fm(renderFont);
-		double natural = fm.horizontalAdvance(shown);
-		if (data.maxWidth > 0 && data.wrapMode == "shrink" && natural > data.maxWidth) {
-			// 自動縮小: 収まるように文字サイズを下げる（index.html と同じ計算）
-			int shrunk = std::max(1, (int)std::floor(px * (double)data.maxWidth / natural));
-			renderFont.setPixelSize(shrunk);
-			natural = QFontMetricsF(renderFont).horizontalAdvance(shown);
-		}
-		lines << shown;
-		width = natural;
+	} else if (data.maxWidth > 0 && data.wrapMode == "shrink" && rl.width > data.maxWidth) {
+		// 自動縮小: 収まるように要素全体の文字サイズを下げる（部分指定の倍率はそのまま。index.html と同じ計算）
+		int shrunk = std::max(1, (int)std::floor(px * (double)data.maxWidth / rl.width));
+		baseFont.setPixelSize(shrunk);
+		layoutRichText(rt, shown, baseFont, 0, rl);
+		width = rl.width;
 	}
-
-	QFontMetricsF fm(renderFont);
-	for (const QString &l : lines)
-		lineWidths << fm.horizontalAdvance(l);
-
-	// CSS の line-height: 1.1 に合わせる
-	lineHeight = renderFont.pixelSize() * 1.1;
-	baselineOffset = (lineHeight - (fm.ascent() + fm.descent())) / 2.0 + fm.ascent();
-	double height = lineHeight * lines.size();
 
 	double left = 0;
 	if (data.align == "center")
 		left = -width / 2.0;
 	else if (data.align == "right")
 		left = -width;
-	box = QRectF(left, 0, std::max(width, 1.0), height);
+
+	// 行ごとに高さとベースラインを決め、範囲ごとの文字を輪郭にする
+	outlinePath = QPainterPath();
+	fills.clear();
+	QMap<QRgb, int> fillIndex;
+	QColor baseColor(data.color);
+	double y = 0;
+
+	QTextLayout &layout = *rl.layout;
+	for (int li = 0; li < layout.lineCount(); ++li) {
+		QTextLine line = layout.lineAt(li);
+		int lineStart = line.textStart();
+		int lineEnd = lineStart + line.textLength();
+
+		double above = 0, below = 0;
+		addLineBox(baseFont, above, below);
+		for (int ri = 0; ri < rt.runs.size(); ++ri) {
+			const RichTextRun &run = rt.runs[ri];
+			if (run.start < lineEnd && run.start + run.length > lineStart)
+				addLineBox(rl.runFonts[ri], above, below);
+		}
+		double baseline = y + above;
+
+		double lineWidth = line.naturalTextWidth();
+		double x0 = left;
+		if (data.align == "center")
+			x0 += (width - lineWidth) / 2.0;
+		else if (data.align == "right")
+			x0 += width - lineWidth;
+
+		for (int ri = 0; ri < rt.runs.size(); ++ri) {
+			const RichTextRun &run = rt.runs[ri];
+			int from = std::max(run.start, lineStart);
+			int to = std::min(run.start + run.length, lineEnd);
+			if (from >= to)
+				continue;
+			QString segment = shown.mid(from, to - from);
+			segment.remove(QChar(QChar::LineSeparator));
+			if (segment.trimmed().isEmpty())
+				continue;
+
+			QColor color = run.color.isEmpty() ? baseColor : QColor(run.color);
+			if (!color.isValid())
+				color = baseColor;
+
+			QPainterPath glyphs;
+			glyphs.addText(x0 + line.cursorToX(from), baseline, rl.runFonts[ri], segment);
+			outlinePath.addPath(glyphs);
+			auto it = fillIndex.find(color.rgba());
+			if (it == fillIndex.end()) {
+				fillIndex.insert(color.rgba(), fills.size());
+				fills << qMakePair(color, glyphs);
+			} else {
+				fills[it.value()].second.addPath(glyphs);
+			}
+		}
+
+		y += above + below;
+	}
+	if (layout.lineCount() == 0)
+		y = baseFont.pixelSize() * 1.1;
+
+	box = QRectF(left, 0, std::max(width, 1.0), y);
 
 	update();
 }
@@ -110,22 +218,12 @@ void ElementItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWi
 	if (!ed.isVisible)
 		painter->setOpacity(0.35);
 
-	QPainterPath path;
-	for (int i = 0; i < lines.size(); ++i) {
-		double x = box.left();
-		if (ed.align == "center")
-			x += (box.width() - lineWidths[i]) / 2.0;
-		else if (ed.align == "right")
-			x += box.width() - lineWidths[i];
-		double y = box.top() + i * lineHeight + baselineOffset;
-		path.addText(x, y, renderFont, lines[i]);
-	}
-
 	if (ed.outlineEnabled && ed.outlineSize > 0) {
 		QPen outlinePen(QColor(ed.outlineColor), ed.outlineSize, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-		painter->strokePath(path, outlinePen);
+		painter->strokePath(outlinePath, outlinePen);
 	}
-	painter->fillPath(path, QColor(ed.color));
+	for (const auto &fill : fills)
+		painter->fillPath(fill.second, fill.first);
 
 	painter->setOpacity(1.0);
 	double scale = painter->worldTransform().m11();
