@@ -438,9 +438,9 @@ void RTAPluginDock::InitDesignTab()
 			ui->textAlignBox->itemData(i).toString();
 		this->SaveOverlayData();
 	});
-	connect(ui->visibleCheckBox, &QCheckBox::stateChanged, this, [this](int s) {
+	connect(ui->visibleCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
 		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].isVisible =
-			(s == Qt::Checked);
+			checked;
 		this->SaveOverlayData();
 	});
 	connect(ui->maxWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int v) {
@@ -452,9 +452,9 @@ void RTAPluginDock::InitDesignTab()
 			ui->wrapModeBox->itemData(i).toString();
 		this->SaveOverlayData();
 	});
-	connect(ui->outlineCheckBox, &QCheckBox::stateChanged, this, [this](int s) {
+	connect(ui->outlineCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
 		layoutData[this->currentLayoutName][textElementMap.at(ui->textSelectBox->currentText())].outlineEnabled =
-			(s == Qt::Checked);
+			checked;
 		this->SaveOverlayData();
 	});
 	connect(ui->outlineSize, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int v) {
@@ -538,7 +538,7 @@ void RTAPluginDock::InitGlobalTab()
 		}
 	});
 
-	auto onIconToggled = [this](int) {
+	auto onIconToggled = [this](bool) {
 		this->showIcons[0] = ui->showRunner1IconCheckBox->isChecked();
 		this->showIcons[1] = ui->showRunner2IconCheckBox->isChecked();
 		this->showIcons[2] = ui->showRunner3IconCheckBox->isChecked();
@@ -546,20 +546,20 @@ void RTAPluginDock::InitGlobalTab()
 		this->showIcons[4] = ui->showCommentatorIconCheckBox->isChecked();
 		this->SaveOverlayData();
 	};
-	connect(ui->showRunner1IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
-	connect(ui->showRunner2IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
-	connect(ui->showRunner3IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
-	connect(ui->showRunner4IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
-	connect(ui->showCommentatorIconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
-	connect(ui->TimerStartScreenShotCheck, &QCheckBox::stateChanged, this, [this](int s) {
-		this->autoScreenShotOnStart = (s == Qt::Checked);
+	connect(ui->showRunner1IconCheckBox, &QCheckBox::toggled, this, onIconToggled);
+	connect(ui->showRunner2IconCheckBox, &QCheckBox::toggled, this, onIconToggled);
+	connect(ui->showRunner3IconCheckBox, &QCheckBox::toggled, this, onIconToggled);
+	connect(ui->showRunner4IconCheckBox, &QCheckBox::toggled, this, onIconToggled);
+	connect(ui->showCommentatorIconCheckBox, &QCheckBox::toggled, this, onIconToggled);
+	connect(ui->TimerStartScreenShotCheck, &QCheckBox::toggled, this, [this](bool checked) {
+		this->autoScreenShotOnStart = checked;
 		this->SaveOverlayData();
 	});
-	connect(ui->TimerStopScreenShotCheck, &QCheckBox::stateChanged, this, [this](int s) {
-		this->autoScreenShotOnStop = (s == Qt::Checked);
+	connect(ui->TimerStopScreenShotCheck, &QCheckBox::toggled, this, [this](bool checked) {
+		this->autoScreenShotOnStop = checked;
 		this->SaveOverlayData();
 	});
-	connect(ui->syncSceneCheckBox, &QCheckBox::stateChanged, this, [this](int) { this->SaveOverlayData(); });
+	connect(ui->syncSceneCheckBox, &QCheckBox::toggled, this, [this](bool) { this->SaveOverlayData(); });
 }
 
 QJsonObject RTAPluginDock::CollectValues()
