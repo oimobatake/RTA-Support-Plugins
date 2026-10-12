@@ -19,6 +19,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFile>
+#include <QSaveFile>
 #include <QDir>
 #include <QMessageBox>
 #include <QCheckBox>
@@ -191,26 +192,16 @@ void RTAPluginDock::InitMainTab()
 	});
 
 	// 走者個別ストップ
-	connect(ui->timerStopButton_P1, &QPushButton::clicked, this, [this]() {
-		this->runnerTimers[0] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss")
-								      : "";
-		this->SaveOverlayData();
-	});
-	connect(ui->timerStopButton_P2, &QPushButton::clicked, this, [this]() {
-		this->runnerTimers[1] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss")
-								      : "";
-		this->SaveOverlayData();
-	});
-	connect(ui->timerStopButton_P3, &QPushButton::clicked, this, [this]() {
-		this->runnerTimers[2] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss")
-								      : "";
-		this->SaveOverlayData();
-	});
-	connect(ui->timerStopButton_P4, &QPushButton::clicked, this, [this]() {
-		this->runnerTimers[3] = ui->TimerOnlyBtn->isChecked() ? ui->CountUpTimer->time().toString("HH:mm:ss")
-								      : "";
-		this->SaveOverlayData();
-	});
+	// カウントアップが表示されているモード（TimerOnly / Both）の時だけタイムを記録する
+	QPushButton *runnerStopButtons[4] = {ui->timerStopButton_P1, ui->timerStopButton_P2, ui->timerStopButton_P3,
+					     ui->timerStopButton_P4};
+	for (int i = 0; i < 4; i++) {
+		connect(runnerStopButtons[i], &QPushButton::clicked, this, [this, i]() {
+			bool countUpVisible = ui->TimerOnlyBtn->isChecked() || ui->BothBtn->isChecked();
+			this->runnerTimers[i] = countUpVisible ? ui->CountUpTimer->time().toString("HH:mm:ss") : "";
+			this->SaveOverlayData();
+		});
+	}
 
 	// 設定確定
 	connect(ui->textDone, &QPushButton::clicked, this, &RTAPluginDock::onUpdateDoneButtonClicked);
@@ -535,10 +526,15 @@ void RTAPluginDock::InitGlobalTab()
 	connect(ui->showRunner3IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
 	connect(ui->showRunner4IconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
 	connect(ui->showCommentatorIconCheckBox, &QCheckBox::stateChanged, this, onIconToggled);
-	connect(ui->TimerStartScreenShotCheck, &QCheckBox::stateChanged, this,
-		[this](int s) { this->autoScreenShotOnStart = (s == Qt::Checked); });
-	connect(ui->TimerStopScreenShotCheck, &QCheckBox::stateChanged, this,
-		[this](int s) { this->autoScreenShotOnStop = (s == Qt::Checked); });
+	connect(ui->TimerStartScreenShotCheck, &QCheckBox::stateChanged, this, [this](int s) {
+		this->autoScreenShotOnStart = (s == Qt::Checked);
+		this->SaveOverlayData();
+	});
+	connect(ui->TimerStopScreenShotCheck, &QCheckBox::stateChanged, this, [this](int s) {
+		this->autoScreenShotOnStop = (s == Qt::Checked);
+		this->SaveOverlayData();
+	});
+	connect(ui->syncSceneCheckBox, &QCheckBox::stateChanged, this, [this](int) { this->SaveOverlayData(); });
 }
 
 void RTAPluginDock::SaveOverlayData()
@@ -563,9 +559,9 @@ void RTAPluginDock::SaveOverlayData()
 	valObj.insert("CountUpTimer", ui->TimerOnlyBtn->isChecked() || ui->BothBtn->isChecked() ?  ui->CountUpTimer->time().toString("HH:mm:ss") : "");
 	valObj.insert("CountDownTimer", ui->CowntDownOnlyBtn->isChecked() || ui->BothBtn->isChecked() ?ui->CountDonwTimer->time().toString("HH:mm:ss") : "");
 
-	// 次のゲームの情報 (3個先まで)
+	// 次のゲームの情報 (3個先まで。_1 が直後のゲーム)
 	int currentIndex = ui->gameSelectBox->currentIndex();
-	for (int i = 0; i < 3; ++i) {
+	for (int i = 1; i <= 3; ++i) {
 		QString suffix = QString::number(i);
 		if (currentIndex >= 0 && currentIndex + i < (int)this->currentGameData.size()) {
 			const GameData &nextData = this->currentGameData[currentIndex + i];
@@ -638,18 +634,48 @@ void RTAPluginDock::SaveOverlayData()
 	settingsObj.insert("showIcon_3", this->showIcons[2]);
 	settingsObj.insert("showIcon_4", this->showIcons[3]);
 	settingsObj.insert("showIcon_5", this->showIcons[4]);
-	
+	settingsObj.insert("autoScreenShotOnStart", this->autoScreenShotOnStart);
+	settingsObj.insert("autoScreenShotOnStop", this->autoScreenShotOnStop);
+	settingsObj.insert("syncSceneChange", ui->syncSceneCheckBox->isChecked());
+	settingsObj.insert("countDownInit", this->initCountDownTimer.toString("HH:mm:ss"));
+
 	root.insert("settings", settingsObj);
+
+	// schedule (再起動後に復元するためのゲーム一覧)
+	QJsonArray scheduleArr;
+	for (const auto &d : this->currentGameData) {
+		QJsonObject item;
+		item.insert("gameTitle", d.gameTitle);
+		item.insert("runnerName", d.runnerName);
+		item.insert("category", d.category);
+		item.insert("hardware", d.hardware);
+		item.insert("commentator", d.commentator);
+		item.insert("estimateTime", d.estimateTime);
+		scheduleArr.append(item);
+	}
+	QJsonObject scheduleObj;
+	scheduleObj.insert("games", scheduleArr);
+	scheduleObj.insert("currentIndex", currentIndex);
+	root.insert("schedule", scheduleObj);
 
 	// 保存実行
 	char *pathC = obs_module_get_config_path(obs_current_module(), "");
 	QString path = QString::fromUtf8(pathC);
 	bfree(pathC);
 	QDir().mkpath(path);
-	QFile file(path + "/overlay_data.json");
+	// ブラウザソースが書きかけのファイルを読まないよう、一時ファイルに書いてから置き換える
+	QByteArray json = QJsonDocument(root).toJson();
+	QSaveFile file(path + "/overlay_data.json");
 	if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		file.write(QJsonDocument(root).toJson());
-		file.close();
+		file.write(json);
+		if (file.commit())
+			return;
+	}
+	// 置き換えに失敗した場合（ブラウザがファイルを開いている等）は従来どおり直接書き込む
+	QFile fallback(path + "/overlay_data.json");
+	if (fallback.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		fallback.write(json);
+		fallback.close();
 	}
 }
 
@@ -750,6 +776,32 @@ void RTAPluginDock::LoadOverlayData()
 	}
 	ui->layoutSelectBox->blockSignals(false);
 
+	// === schedule (ゲーム一覧) の復元 ===
+	// values より先に復元する（ゲーム選択の変更で入力欄が上書きされないよう signal を止める）
+	if (root.contains("schedule")) {
+		QJsonObject scheduleObj = root["schedule"].toObject();
+		this->currentGameData.clear();
+		ui->gameSelectBox->blockSignals(true);
+		ui->gameSelectBox->clear();
+		for (const QJsonValue &v : scheduleObj["games"].toArray()) {
+			QJsonObject item = v.toObject();
+			GameData d;
+			d.gameTitle = item["gameTitle"].toString();
+			d.runnerName = item["runnerName"].toString();
+			d.category = item["category"].toString();
+			d.hardware = item["hardware"].toString();
+			d.commentator = item["commentator"].toString();
+			d.estimateTime = item["estimateTime"].toInt();
+			this->currentGameData.push_back(d);
+			ui->gameSelectBox->addItem(d.gameTitle);
+		}
+		int idx = scheduleObj["currentIndex"].toInt(0);
+		if (idx >= 0 && idx < ui->gameSelectBox->count())
+			ui->gameSelectBox->setCurrentIndex(idx);
+		ui->gameSelectBox->blockSignals(false);
+		RefreshScheduleTable();
+	}
+
 	// === values (テキストボックス等の中身) の復元 ===
 	if (root.contains("values")) {
 		QJsonObject valObj = root["values"].toObject();
@@ -782,11 +834,22 @@ void RTAPluginDock::LoadOverlayData()
 		this->showIcons[3] = settingsObj["showIcon_4"].toBool();
 		this->showIcons[4] = settingsObj["showIcon_5"].toBool();
 
+		QTime countDownInit = QTime::fromString(settingsObj["countDownInit"].toString(), "HH:mm:ss");
+		if (countDownInit.isValid()) {
+			this->initCountDownTimer = countDownInit;
+			ui->CountDonwTimer->setTime(countDownInit);
+		}
+		this->autoScreenShotOnStart = settingsObj["autoScreenShotOnStart"].toBool();
+		this->autoScreenShotOnStop = settingsObj["autoScreenShotOnStop"].toBool();
+
 		ui->showRunner1IconCheckBox->setChecked(this->showIcons[0]);
 		ui->showRunner2IconCheckBox->setChecked(this->showIcons[1]);
 		ui->showRunner3IconCheckBox->setChecked(this->showIcons[2]);
 		ui->showRunner4IconCheckBox->setChecked(this->showIcons[3]);
 		ui->showCommentatorIconCheckBox->setChecked(this->showIcons[4]);
+		ui->TimerStartScreenShotCheck->setChecked(this->autoScreenShotOnStart);
+		ui->TimerStopScreenShotCheck->setChecked(this->autoScreenShotOnStop);
+		ui->syncSceneCheckBox->setChecked(settingsObj["syncSceneChange"].toBool());
 	}
 }
 
@@ -818,6 +881,9 @@ void RTAPluginDock::onSavePosSettingClicked()
 		s.insert("outlineEnabled", elData.outlineEnabled);
 		s.insert("outlineSize", elData.outlineSize);
 		s.insert("outlineColor", elData.outlineColor);
+		s.insert("isVisible", elData.isVisible);
+		s.insert("maxWidth", elData.maxWidth);
+		s.insert("wrapMode", elData.wrapMode);
 		styles.insert(id, s);
 	}
 	exportObj.insert("transforms", trans);
@@ -874,6 +940,13 @@ void RTAPluginDock::onLoadPosSettingClicked()
 				layoutData[this->currentLayoutName][id].outlineEnabled = s["outlineEnabled"].toBool();
 				layoutData[this->currentLayoutName][id].outlineSize = s["outlineSize"].toInt();
 				layoutData[this->currentLayoutName][id].outlineColor = s["outlineColor"].toString();
+				// 古い形式のファイルには含まれないので、ある時だけ反映する
+				if (s.contains("isVisible"))
+					layoutData[this->currentLayoutName][id].isVisible = s["isVisible"].toBool();
+				if (s.contains("maxWidth"))
+					layoutData[this->currentLayoutName][id].maxWidth = s["maxWidth"].toInt();
+				if (s.contains("wrapMode"))
+					layoutData[this->currentLayoutName][id].wrapMode = s["wrapMode"].toString();
 			}
 		}
 	}
@@ -993,19 +1066,34 @@ void RTAPluginDock::onApplyScheduleClicked()
 		QJsonObject itemObj = value.toObject();
 		auto dataArray = itemObj["data"].toArray();
 
+		// コンボボックスの先頭は空欄（未選択）なので、列番号は index - 1。
+		// 未選択や列数不足の場合は空文字にする
+		auto column = [&dataArray](int comboIndex) -> QString {
+			int col = comboIndex - 1;
+			if (col < 0 || col >= dataArray.size())
+				return "";
+			return dataArray.at(col).toString();
+		};
+
 		GameData data;
-		data.gameTitle = dataArray[gi - 1].toString();
-		data.runnerName = dataArray[ri - 1].toString();
-		data.category = dataArray[ci - 1].toString();
-		data.hardware = dataArray[hi - 1].toString();
-		data.commentator = dataArray[cmi - 1].toString();
+		data.gameTitle = column(gi);
+		data.runnerName = column(ri);
+		data.category = column(ci);
+		data.hardware = column(hi);
+		data.commentator = column(cmi);
 		data.estimateTime = itemObj["length_t"].toInt();
 
 		this->currentGameData.push_back(data);
 		ui->gameSelectBox->addItem(data.gameTitle);
 	}
 
-	// テーブルに反映
+	RefreshScheduleTable();
+
+	SaveOverlayData();
+}
+
+void RTAPluginDock::RefreshScheduleTable()
+{
 	ui->scheduleTable->setRowCount(0);
 	for (int i = 0; i < (int)this->currentGameData.size(); ++i) {
 		ui->scheduleTable->insertRow(i);
@@ -1019,6 +1107,4 @@ void RTAPluginDock::onApplyScheduleClicked()
 
 		ui->scheduleTable->setItem(i, 5, new QTableWidgetItem(this->currentGameData[i].commentator));
 	}
-
-	SaveOverlayData();
 }

@@ -32,7 +32,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 static RTAPluginDock *g_RTAPluginDock = nullptr;
 
 // OBSのUIイベントを監視する関数
-static void obs_frontend_event_callback(enum obs_frontend_event event, void *private_data)
+static void obs_frontend_event_callback(enum obs_frontend_event event, void * /*private_data*/)
 {
 	// OBSのUIの準備が整った、という合図が来たら
 	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
