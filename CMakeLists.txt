@@ -28,7 +28,7 @@ endif()
 
 if(ENABLE_QT)
   # Qt6の必須コンポーネントを探す
-  find_package(Qt6 REQUIRED COMPONENTS Widgets Core Network Tools)
+  find_package(Qt6 REQUIRED COMPONENTS Widgets Core Network)
   # Qt6のライブラリをリンク
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets Qt6::Network)
   # Qtの自動化機能を有効にする

@@ -54,7 +54,7 @@ function(_setup_obs_studio)
 
   if(OS_WINDOWS)
     set(_cmake_generator "${CMAKE_GENERATOR}")
-    set(_cmake_arch "-A ${arch},version=${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+    set(_cmake_arch "-A ${arch}")
     set(_cmake_extra "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION} -DCMAKE_ENABLE_SCRIPTING=OFF")
   elseif(OS_MACOS)
     set(_cmake_generator "Xcode")
@@ -214,7 +214,8 @@ function(_check_dependencies)
     elseif(dependency STREQUAL obs-studio)
       set(_obs_version ${version})
       set(_obs_destination "${destination}")
-      list(APPEND CMAKE_PREFIX_PATH "${dependencies_dir}")
+      # OBS 30.x は Windows で libobs の CMake 設定を .deps/cmake/<name> に入れるため、そこも探す
+      list(APPEND CMAKE_PREFIX_PATH "${dependencies_dir}" "${dependencies_dir}/cmake")
     endif()
 
     message(STATUS "Setting up ${label} (${arch}) - done")
