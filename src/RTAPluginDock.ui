@@ -69,26 +69,9 @@
              </widget>
             </item>
             <item>
-             <widget class="QTimeEdit" name="CountDonwTimer">
+             <widget class="DurationEdit" name="CountDonwTimer">
               <property name="enabled">
                <bool>false</bool>
-              </property>
-              <property name="maximumTime">
-               <time>
-                <hour>23</hour>
-                <minute>59</minute>
-                <second>59</second>
-               </time>
-              </property>
-              <property name="minimumTime">
-               <time>
-                <hour>0</hour>
-                <minute>0</minute>
-                <second>0</second>
-               </time>
-              </property>
-              <property name="displayFormat">
-               <string>HH:mm:ss</string>
               </property>
              </widget>
             </item>
@@ -1062,6 +1045,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>DurationEdit</class>
+   <extends>QAbstractSpinBox</extends>
+   <header>DurationEdit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
