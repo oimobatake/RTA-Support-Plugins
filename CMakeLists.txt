@@ -46,6 +46,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     src/OverlayCanvas.cpp
     src/RichTextMarkup.cpp
     src/RichTextTools.cpp
+    src/DurationEdit.cpp
 )
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})

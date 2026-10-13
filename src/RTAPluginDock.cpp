@@ -1,4 +1,5 @@
 ﻿#include "RTAPluginDock.h"
+#include "DurationEdit.h"
 #include "ui_RTAPluginDock.h"
 #include "OverlayEditor.h"
 #include "RichTextMarkup.h"
@@ -140,9 +141,9 @@ void RTAPluginDock::InitMainTab()
 	// タイマー定期実行
 	connect(timer, &QTimer::timeout, this, [this]() {
 		if (ui->CowntDownOnlyBtn->isChecked() || ui->BothBtn->isChecked()) {
-			QTime t = ui->CountDonwTimer->time();
-			if (t != QTime(0, 0, 0))
-				ui->CountDonwTimer->setTime(t.addSecs(-1));
+			int t = ui->CountDonwTimer->seconds();
+			if (t > 0)
+				ui->CountDonwTimer->setSeconds(t - 1);
 		}
 		if (ui->TimerOnlyBtn->isChecked() || ui->BothBtn->isChecked()) {
 			ui->CountUpTimer->setTime(ui->CountUpTimer->time().addSecs(1));
@@ -188,7 +189,7 @@ void RTAPluginDock::InitMainTab()
 
 	connect(ui->timeResetButton, &QPushButton::clicked, this, [this]() {
 		ui->CountUpTimer->setTime(QTime(0, 0, 0));
-		ui->CountDonwTimer->setTime(this->initCountDownTimer);
+		ui->CountDonwTimer->setSeconds(this->initCountDownTimer);
 		ui->timerStopButton->setEnabled(false);
 		ui->timerStartButton->setEnabled(true);
 		ui->textDone->setEnabled(true);
@@ -579,7 +580,7 @@ QJsonObject RTAPluginDock::CollectValues()
 	valObj.insert("Commentator", ui->CommentatorText->text());
 	valObj.insert("EstimateTime", ui->EstimateTime->time().toString("HH:mm:ss"));
 	valObj.insert("CountUpTimer", ui->TimerOnlyBtn->isChecked() || ui->BothBtn->isChecked() ?  ui->CountUpTimer->time().toString("HH:mm:ss") : "");
-	valObj.insert("CountDownTimer", ui->CowntDownOnlyBtn->isChecked() || ui->BothBtn->isChecked() ?ui->CountDonwTimer->time().toString("HH:mm:ss") : "");
+	valObj.insert("CountDownTimer", ui->CowntDownOnlyBtn->isChecked() || ui->BothBtn->isChecked() ?DurationEdit::format(ui->CountDonwTimer->seconds()) : "");
 
 	// 次のゲームの情報 (3個先まで。_1 が直後のゲーム)
 	int currentIndex = ui->gameSelectBox->currentIndex();
@@ -672,7 +673,7 @@ void RTAPluginDock::SaveOverlayData()
 	settingsObj.insert("autoScreenShotOnStart", this->autoScreenShotOnStart);
 	settingsObj.insert("autoScreenShotOnStop", this->autoScreenShotOnStop);
 	settingsObj.insert("syncSceneChange", ui->syncSceneCheckBox->isChecked());
-	settingsObj.insert("countDownInit", this->initCountDownTimer.toString("HH:mm:ss"));
+	settingsObj.insert("countDownInit", DurationEdit::format(this->initCountDownTimer));
 
 	root.insert("settings", settingsObj);
 
@@ -874,10 +875,10 @@ void RTAPluginDock::LoadOverlayData()
 		this->showIcons[3] = settingsObj["showIcon_4"].toBool();
 		this->showIcons[4] = settingsObj["showIcon_5"].toBool();
 
-		QTime countDownInit = QTime::fromString(settingsObj["countDownInit"].toString(), "HH:mm:ss");
-		if (countDownInit.isValid()) {
+		int countDownInit = DurationEdit::parse(settingsObj["countDownInit"].toString());
+		if (countDownInit >= 0) {
 			this->initCountDownTimer = countDownInit;
-			ui->CountDonwTimer->setTime(countDownInit);
+			ui->CountDonwTimer->setSeconds(countDownInit);
 		}
 		this->autoScreenShotOnStart = settingsObj["autoScreenShotOnStart"].toBool();
 		this->autoScreenShotOnStop = settingsObj["autoScreenShotOnStop"].toBool();
@@ -1083,7 +1084,7 @@ void RTAPluginDock::loadAndParseJsonFile()
 
 void RTAPluginDock::onUpdateDoneButtonClicked()
 {
-	this->initCountDownTimer = ui->CountDonwTimer->time();
+	this->initCountDownTimer = ui->CountDonwTimer->seconds();
 	SaveOverlayData();
 	//QMessageBox::information(this, "完了", "設定をオーバーレイに反映しました。");
 }

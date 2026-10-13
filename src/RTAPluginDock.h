@@ -76,7 +76,7 @@ private:
 	QString runnerTimers[4];
 	QString timerState = "Reset";
 	QFont currentFont;
-	QTime initCountDownTimer;
+	int initCountDownTimer = 0; // カウントダウンの初期値 (秒)
 
 	bool showIcons[5] = {false, false, false, false, false};
 	bool autoScreenShotOnStart = false;
